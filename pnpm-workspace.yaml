@@ -1,0 +1,7 @@
+packages:
+  # All microservices
+  - 'apps/*'
+  # Shared packages/libraries
+  - 'packages/*'
+  # Tooling and configuration packages
+  - 'tools/*'

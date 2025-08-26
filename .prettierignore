@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+.env
+.env.local
+.env.example
+*.log
+drizzle
+docker-compose.yml
+Dockerfile
+*.md
