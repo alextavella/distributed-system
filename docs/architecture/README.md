@@ -47,40 +47,7 @@ New to the message broker architecture? Start here:
 
 ## 🏗️ Architecture at a Glance
 
-```mermaid
-graph TB
-    subgraph "Your Services"
-        OS[Order Service]
-        US[User Service]
-        PS[Payment Service]
-    end
-    
-    subgraph "Broker Architecture"
-        BC[Broker Client<br/>🎭 Facade]
-        EF[Event Factory<br/>🏭 Creates Events]
-        ED[Event Dispatcher<br/>📨 Routes Events]
-    end
-    
-    subgraph "Infrastructure"
-        RMQ[RabbitMQ<br/>🐰 Message Broker]
-    end
-    
-    OS --> BC
-    US --> BC
-    PS --> BC
-    
-    BC --> EF
-    BC --> ED
-    ED --> RMQ
-    
-    classDef service fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef broker fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef infra fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    
-    class OS,US,PS service
-    class BC,EF,ED broker
-    class RMQ infra
-```
+> **📋 Note**: For detailed architecture diagrams and complete project structure, see [Project Structure Documentation](./PROJECT_STRUCTURE.md).
 
 ## ✨ Key Features
 
@@ -93,13 +60,7 @@ graph TB
 
 ## 🔧 Core Components
 
-| Component | Purpose | Pattern |
-|-----------|---------|---------|
-| **BrokerClient** | Main interface for applications | Facade |
-| **EventFactory** | Creates standardized events | Factory |
-| **EventDispatcher** | Routes events to correct channels | Command |
-| **RabbitMQConnection** | Manages broker connections | Adapter |
-| **RabbitMQPublisher** | Publishes events to broker | Strategy |
+> **📋 Note**: For detailed component descriptions and responsibilities, see [Architecture Overview](./MESSAGE_BROKER_ARCHITECTURE.md#key-components-responsibilities).
 
 ## 📋 Prerequisites
 
