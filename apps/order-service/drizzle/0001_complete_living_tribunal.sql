@@ -1,0 +1,1 @@
+ALTER TABLE "order_items" ALTER COLUMN "item_id" SET DATA TYPE varchar(100);

@@ -86,8 +86,5 @@ Thumbs.db
 *.db
 *.sqlite
 
-# Drizzle
-drizzle/
-
 # Docker
 docker-compose.override.yml
