@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { migrate } from 'drizzle-orm/postgres-js/migrator'
+import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { db } from './connection.js'
 
 async function main() {
