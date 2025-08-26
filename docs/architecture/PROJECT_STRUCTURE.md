@@ -11,43 +11,72 @@ microservices/
 │   │   ├── GETTING_STARTED_TUTORIAL.md     # 🎯 Learning tutorial
 │   │   ├── QUICK_REFERENCE.md              # 🛠️ How-to guides & reference
 │   │   └── PROJECT_STRUCTURE.md            # 📋 This file
-│   ├── features/                           # 🎯 Feature documentation
-│   │   └── 01.CREATE_ORDER.md             # Order creation feature
+│   ├── feature/                            # 🎯 Feature documentation
+│   │   ├── orders/                         # 📋 Order management features
+│   │   │   └── 01.CREATE_ORDER.md          # Order creation feature
+│   │   └── invoices/                       # 🧾 Invoice processing features
+│   │       ├── README.md                   # Invoice service overview
+│   │       ├── TECHNICAL_SPECIFICATION.md  # Technical specs
+│   │       └── 01.CREATE_INVOICE.md        # Automatic invoice creation
 │   └── CHALLENGE.md                        # Original challenge description
 │
 ├── apps/                                   # 🚀 Microservices & Shared Packages
-│   ├── shared-broker/                     # 🎭 Shared Message Broker
+│   ├── shared-broker/                     # 🎭 Shared Message Broker Package
 │   │   ├── src/
 │   │   │   ├── interfaces/                # 🔌 Abstractions
 │   │   │   │   ├── message-broker.interface.ts
 │   │   │   │   └── events.interface.ts
 │   │   │   ├── implementations/           # 🛠️ Concrete implementations
 │   │   │   │   ├── rabbitmq-connection.ts
-│   │   │   │   └── rabbitmq-event-publisher.ts
+│   │   │   │   ├── rabbitmq-event-publisher.ts
+│   │   │   │   └── rabbitmq-event-consumer.ts
 │   │   │   ├── events/                   # 🎯 Event handling
 │   │   │   │   ├── event-factory.ts
 │   │   │   │   └── event-dispatcher.ts
 │   │   │   ├── config/                   # ⚙️ Configuration
 │   │   │   │   └── broker.config.ts
-│   │   │   ├── broker-client.ts          # 🎭 Main facade
+│   │   │   ├── broker-client.ts          # 🎭 Main facade (Producer + Consumer)
 │   │   │   └── index.ts                  # 📦 Public exports
 │   │   ├── dist/                         # 📦 Built package
 │   │   ├── package.json                  # 📦 Package definition
 │   │   ├── tsconfig.json                 # ⚙️ TypeScript config
 │   │   └── README.md                     # 📖 Package documentation
 │   │
-│   └── order-service/                     # 🛍️ Order management service
+│   ├── order-service/                     # 🛍️ Order management service (Event Producer)
+│   │   ├── src/
+│   │   │   ├── db/                       # 🗃️ Database layer
+│   │   │   │   ├── connection.ts
+│   │   │   │   ├── migrate.ts
+│   │   │   │   └── schema.ts
+│   │   │   ├── routes/                   # 🛣️ API routes
+│   │   │   │   ├── orders.ts
+│   │   │   │   └── health.ts
+│   │   │   ├── services/                 # 🔧 Business logic
+│   │   │   │   └── order.service.ts
+│   │   │   ├── types/                    # 📝 Type definitions
+│   │   │   │   └── order.ts
+│   │   │   └── index.ts                  # 🚪 Application entry point
+│   │   ├── drizzle/                      # 📊 Database migrations
+│   │   ├── package.json                  # 📦 Dependencies (includes @streamflix/shared-broker)
+│   │   ├── tsconfig.json                 # ⚙️ TypeScript config
+│   │   ├── drizzle.config.ts            # 🗃️ Drizzle ORM config
+│   │   ├── Dockerfile                    # 🐳 Container definition (workspace-aware)
+│   │   └── .env.example                  # 🔐 Environment variables
+│   │
+│   └── invoice-service/                   # 🧾 Invoice processing service (Event Consumer)
 │       ├── src/
-│       │   ├── db/                       # 🗃️ Database layer
+│       │   ├── db/                       # 🗃️ Database layer (separate PostgreSQL)
 │       │   │   ├── connection.ts
 │       │   │   ├── migrate.ts
 │       │   │   └── schema.ts
 │       │   ├── routes/                   # 🛣️ API routes
-│       │   │   └── orders.ts
+│       │   │   ├── invoices.ts
+│       │   │   └── health.ts
 │       │   ├── services/                 # 🔧 Business logic
-│       │   │   └── order.service.ts
+│       │   │   ├── invoice.service.ts
+│       │   │   └── invoice-event-consumer.ts
 │       │   ├── types/                    # 📝 Type definitions
-│       │   │   └── order.ts
+│       │   │   └── invoice.ts
 │       │   └── index.ts                  # 🚪 Application entry point
 │       ├── drizzle/                      # 📊 Database migrations
 │       ├── package.json                  # 📦 Dependencies (includes @streamflix/shared-broker)
@@ -56,11 +85,17 @@ microservices/
 │       ├── Dockerfile                    # 🐳 Container definition (workspace-aware)
 │       └── .env.example                  # 🔐 Environment variables
 │
+├── test/                                 # 🧪 Testing suite
+│   ├── http/                            # 🌐 HTTP API tests
+│   │   ├── order.http                   # Order service test scenarios
+│   │   └── invoice.http                 # Invoice service test scenarios
+│   └── README.md                        # Testing guide and procedures
+│
 ├── scripts/                              # 🔧 Development tools
 │   ├── create-service.js                # Service generator
 │   └── dev-all.sh                       # Start all services
 │
-├── docker-compose.yml                    # 🐳 Infrastructure setup
+├── docker-compose.yml                    # 🐳 Infrastructure setup (RabbitMQ + PostgreSQL instances)
 ├── pnpm-workspace.yaml                  # 📦 Monorepo configuration
 ├── tsconfig.base.json                   # ⚙️ Base TypeScript config
 └── README.md                            # 📖 Project overview
@@ -132,9 +167,10 @@ apps/order-service/src/broker/config/
 
 ## 🔄 Data Flow
 
+### Event Publishing Flow (Order Service)
 ```mermaid
 sequenceDiagram
-    participant App as Application
+    participant OS as Order Service
     participant BC as BrokerClient
     participant EF as EventFactory
     participant ED as EventDispatcher
@@ -142,7 +178,7 @@ sequenceDiagram
     participant RMC as RabbitMQConnection
     participant RMQ as RabbitMQ
 
-    App->>BC: publishOrderCreated(data)
+    OS->>BC: publishOrderCreated(data)
     BC->>EF: createOrderCreatedEvent(data)
     EF-->>BC: OrderCreatedEvent
     BC->>ED: dispatch(event)
@@ -153,7 +189,53 @@ sequenceDiagram
     RMQ-->>REP: ack
     REP-->>ED: success
     ED-->>BC: success
-    BC-->>App: success
+    BC-->>OS: success
+```
+
+### Event Consumption Flow (Invoice Service)
+```mermaid
+sequenceDiagram
+    participant RMQ as RabbitMQ
+    participant REC as RabbitMQConsumer
+    participant IEC as InvoiceEventConsumer
+    participant IS as InvoiceService
+    participant DB as PostgreSQL
+
+    RMQ->>REC: deliver order.created event
+    REC->>IEC: handleOrderCreated(event)
+    IEC->>IS: processOrderEvent(event)
+    IS->>DB: create invoice record
+    DB-->>IS: success
+    IS-->>IEC: success
+    IEC->>REC: ack message
+    REC->>RMQ: acknowledge
+```
+
+### Complete End-to-End Flow
+```mermaid
+sequenceDiagram
+    participant Client as API Client
+    participant OS as Order Service
+    participant RMQ as RabbitMQ
+    participant IS as Invoice Service
+    participant DB1 as Orders DB
+    participant DB2 as Invoices DB
+
+    Client->>OS: POST /api/orders
+    OS->>DB1: create order
+    DB1-->>OS: order created
+    OS->>RMQ: publish order.created event
+    RMQ->>IS: deliver event
+    IS->>DB2: create invoice
+    DB2-->>IS: invoice created
+    IS->>RMQ: ack message
+    OS-->>Client: 201 Created (order)
+    
+    Note over IS: Invoice automatically created
+    Client->>IS: GET /api/invoices/order/{orderId}
+    IS->>DB2: query invoice
+    DB2-->>IS: invoice data
+    IS-->>Client: 200 OK (invoice)
 ```
 
 ## 🎨 Design Patterns Used
@@ -273,10 +355,34 @@ await publisher.publish(exchange, routingKey, event)
 
 The architecture is designed for easy extension:
 
-- **New Event Types**: Add to factory and dispatcher
-- **New Brokers**: Implement interfaces for Kafka, Redis, etc.
-- **Consumer Support**: Add event subscription capabilities
-- **Schema Registry**: Validate event schemas
-- **Dead Letter Queues**: Handle failed message processing
+### 🎯 Event System Extensions
+- **New Event Types**: Add to factory and dispatcher (payment.processed, user.registered, etc.)
+- **Schema Registry**: Validate event schemas with Avro or JSON Schema
+- **Event Versioning**: Handle backward/forward compatibility
+- **Event Sourcing**: Complete audit trail of all events
+
+### 🔌 Broker Extensions  
+- **New Brokers**: Implement interfaces for Kafka, Redis Streams, AWS SQS
+- **Dead Letter Queues**: Handle failed message processing with retry policies
+- **Priority Queues**: Handle urgent vs normal events differently
+- **Message Deduplication**: Prevent duplicate event processing
+
+### 🚀 Service Extensions
+- **New Microservices**: Payment Service, Notification Service, Analytics Service
+- **API Gateway**: Centralized routing and authentication
+- **Service Discovery**: Dynamic service registration and discovery
+- **Load Balancing**: Distribute load across service instances
+
+### 📊 Observability Extensions
+- **Distributed Tracing**: Track events across service boundaries
+- **Metrics Collection**: Prometheus/Grafana for monitoring
+- **Log Aggregation**: Centralized logging with ELK stack
+- **Health Dashboards**: Real-time service status monitoring
+
+### 🔒 Security & Reliability Extensions
+- **Event Encryption**: Secure sensitive event data
+- **Circuit Breakers**: Prevent cascade failures
+- **Rate Limiting**: Protect services from overload
+- **Backup & Recovery**: Event store backup strategies
 
 This structure provides a solid foundation for scalable, maintainable event-driven microservices communication! 🎉

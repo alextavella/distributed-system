@@ -6,13 +6,18 @@ Arquitetura de microserviços para a plataforma StreamFlix usando pnpm workspace
 
 ```
 streamflix-microservices/
-├── apps/                    # Microserviços
-│   └── order-service/       # Serviço de pedidos
-├── packages/                # Bibliotecas compartilhadas
-├── tools/                   # Ferramentas e utilitários
-├── scripts/                 # Scripts de desenvolvimento
-├── docker-compose.yml       # Infraestrutura Docker
-└── pnpm-workspace.yaml     # Configuração do workspace
+├── apps/                           # Microserviços
+│   ├── order-service/              # Serviço de pedidos
+│   ├── invoice-service/            # Serviço de faturas
+│   └── shared-broker/              # Message broker compartilhado
+├── docs/                           # Documentação
+│   ├── architecture/               # Documentação de arquitetura
+│   └── feature/                    # Documentação de features
+├── test/                           # Testes HTTP
+│   └── http/                       # Arquivos de teste REST
+├── scripts/                        # Scripts de desenvolvimento
+├── docker-compose.yml              # Infraestrutura Docker
+└── pnpm-workspace.yaml            # Configuração do workspace
 ```
 
 ## 🚀 Tecnologias
@@ -31,12 +36,13 @@ streamflix-microservices/
 ### Microserviços
 | Serviço | Porta | Descrição | Status |
 |---------|-------|-----------|--------|
-| order-service | 3001 | Gerenciamento de pedidos | ✅ Ativo |
+| order-service | 3001 | Gerenciamento de pedidos e eventos | ✅ Ativo |
+| invoice-service | 3002 | Processamento de faturas via eventos | ✅ Ativo |
 
 ### Pacotes Compartilhados
 | Pacote | Versão | Descrição | Status |
 |--------|--------|-----------|--------|
-| @streamflix/shared-broker | 1.0.0 | Message broker architecture | ✅ Ativo |
+| @streamflix/shared-broker | 1.0.0 | RabbitMQ client com producer/consumer | ✅ Ativo |
 
 ## 📚 Documentação
 
@@ -49,7 +55,10 @@ streamflix-microservices/
 
 ### Features
 
-- **[CREATE_ORDER Feature](./docs/feature/01.CREATE_ORDER.md)** - Documentação da funcionalidade de criação de pedidos
+- **[Order Management](./docs/feature/orders/01.CREATE_ORDER.md)** - Documentação completa da funcionalidade de criação de pedidos
+- **[Invoice Processing](./docs/feature/invoices/README.md)** - Documentação do serviço de processamento de faturas
+  - [Automatic Invoice Creation](./docs/feature/invoices/01.CREATE_INVOICE.md) - Implementação de criação automática via eventos
+  - [Technical Specification](./docs/feature/invoices/TECHNICAL_SPECIFICATION.md) - Especificações técnicas detalhadas
 
 ## 🛠️ Instalação
 
@@ -78,6 +87,7 @@ pnpm install
 
 # Configurar variáveis de ambiente
 cp apps/order-service/env.example apps/order-service/.env
+cp apps/invoice-service/env.example apps/invoice-service/.env
 ```
 
 ## 🚀 Desenvolvimento
@@ -88,14 +98,16 @@ cp apps/order-service/env.example apps/order-service/.env
 # Iniciar todos os serviços
 pnpm dev
 
-# Iniciar serviço específico
-pnpm dev:order
+# Iniciar serviços específicos
+pnpm dev:order      # Order Service
+pnpm dev:invoice    # Invoice Service
 
 # Build de todos os serviços
 pnpm build
 
-# Build de serviço específico
-pnpm build:order
+# Build de serviços específicos
+pnpm build:order    # Order Service
+pnpm build:invoice  # Invoice Service
 ```
 
 ### Opção 2: Desenvolvimento com Docker
@@ -133,6 +145,11 @@ pnpm db:studio
 pnpm db:generate:order
 pnpm db:migrate:order
 pnpm db:studio:order
+
+# Invoice Service  
+pnpm db:generate:invoice
+pnpm db:migrate:invoice
+pnpm db:studio:invoice
 ```
 
 ## 🔧 Scripts Disponíveis
@@ -140,6 +157,7 @@ pnpm db:studio:order
 ### Desenvolvimento
 - `pnpm dev` - Iniciar todos os serviços
 - `pnpm dev:order` - Iniciar apenas order-service
+- `pnpm dev:invoice` - Iniciar apenas invoice-service
 - `pnpm build` - Build de todos os serviços
 - `pnpm start` - Iniciar todos os serviços em produção
 
@@ -180,10 +198,14 @@ pnpm new-service payment-service
 - **Order Service**: http://localhost:3001
   - API Docs: http://localhost:3001/docs
   - Health: http://localhost:3001/health
+- **Invoice Service**: http://localhost:3002
+  - API Docs: http://localhost:3002/docs
+  - Health: http://localhost:3002/health
 
 ### Infraestrutura
 - **RabbitMQ Management**: http://localhost:15672 (admin/admin)
-- **PostgreSQL**: localhost:5432
+- **PostgreSQL Orders**: localhost:5432
+- **PostgreSQL Invoices**: localhost:5433
 
 ## 📚 Estrutura de um Serviço
 
@@ -242,6 +264,33 @@ docker-compose build order-service
 
 ## 🧪 Testes
 
+### Testes HTTP (REST Client)
+
+O projeto inclui uma suíte completa de testes HTTP usando arquivos `.http`:
+
+```bash
+# Estrutura dos testes
+test/
+├── README.md           # Guia completo de testes
+└── http/
+    ├── order.http      # Testes do Order Service
+    └── invoice.http    # Testes do Invoice Service
+```
+
+**Como usar:**
+1. Instalar extensão "REST Client" no VS Code
+2. Abrir arquivos `.http` em `test/http/`
+3. Clicar em "Send Request" acima de cada bloco HTTP
+4. Ver respostas no painel dividido
+
+**Sequência de teste recomendada:**
+1. **Health Checks** → Verificar se serviços estão funcionando
+2. **Create Orders** → Executar casos de teste em `order.http`
+3. **Verify Invoices** → Validar criação automática em `invoice.http`
+4. **Statistics** → Confirmar contadores corretos
+
+### Testes Unitários
+
 ```bash
 # Executar todos os testes
 pnpm test
@@ -251,6 +300,7 @@ pnpm test:watch
 
 # Testes de serviço específico
 pnpm --filter order-service test
+pnpm --filter invoice-service test
 ```
 
 ## 📦 Dependências Compartilhadas
@@ -299,11 +349,15 @@ docker-compose -f docker-compose.prod.yml up -d
 ## 📖 Próximos Passos
 
 1. **Adicionar novos serviços**: `pnpm new-service <name>`
-2. **Implementar testes**: Adicionar Jest ou Vitest
+2. **Implementar testes unitários**: Adicionar Jest ou Vitest
 3. **CI/CD**: Configurar GitHub Actions
-4. **Monitoramento**: Adicionar logs e métricas
+4. **Monitoramento**: Adicionar logs e métricas com Prometheus/Grafana
 5. **API Gateway**: Implementar roteamento centralizado
 6. **Autenticação**: Adicionar JWT e autorização
+7. **Event Sourcing**: Implementar audit trail completo
+8. **Dead Letter Queue**: Adicionar tratamento de falhas em eventos
+9. **Load Balancing**: Configurar múltiplas instâncias dos serviços
+10. **Observabilidade**: Adicionar tracing distribuído com Jaeger
 
 ## 🤝 Contribuindo
 
