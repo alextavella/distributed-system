@@ -24,12 +24,16 @@
     "test": "pnpm --recursive run test",
     "test:watch": "pnpm --recursive run test:watch",
     "type-check": "pnpm --recursive run type-check",
+    "type-check:order": "pnpm --filter order-service run type-check",
+    "type-check:invoice": "pnpm --filter invoice-service run type-check",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:restart": "docker-compose restart",
-    "new-service": "node scripts/create-service.js"
+    "new-service": "node scripts/create-service.js",
+    "prepare": "husky",
+    "pre-commit": "lint-staged"
   },
   "keywords": [
     "microservices",
@@ -43,17 +47,30 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.2.2",
-    "tsx": "^4.6.0",
-    "eslint": "^8.54.0",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
     "@typescript-eslint/parser": "^6.12.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.54.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5",
     "prettier": "^3.1.0",
-    "concurrently": "^8.2.2"
+    "tsx": "^4.6.0",
+    "typescript": "^5.2.2"
   },
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@8.10.0"
+  "packageManager": "pnpm@8.10.0",
+  "lint-staged": {
+    "apps/order-service/src/**/*.{ts,tsx}": [
+      "bash -c 'pnpm run type-check:order'"
+    ],
+    "apps/invoice-service/src/**/*.{ts,tsx}": [
+      "bash -c 'pnpm run type-check:invoice'"
+    ],
+    "apps/shared-broker/src/**/*.{ts,tsx}": [
+      "bash -c 'pnpm --filter shared-broker run type-check'"
+    ]
+  }
 }
