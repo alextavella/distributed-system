@@ -1,0 +1,137 @@
+@baseUrl = http://localhost:3002
+
+### Health Check - Invoice Service
+GET {{baseUrl}}/health
+
+### Health Check - Detailed (with dependencies)
+GET {{baseUrl}}/health/detailed
+
+### Readiness Check
+GET {{baseUrl}}/ready
+
+### Get Invoice Statistics
+GET {{baseUrl}}/api/invoices/stats
+
+### List All Invoices (default pagination)
+GET {{baseUrl}}/api/invoices
+
+### List Invoices with Pagination
+GET {{baseUrl}}/api/invoices?page=1&limit=5
+
+### List Invoices - Filter by Status: Generated
+GET {{baseUrl}}/api/invoices?status=generated
+
+### List Invoices - Filter by Status: Pending
+GET {{baseUrl}}/api/invoices?status=pending
+
+### Get Invoice by Specific Order ID (replace with actual order ID from order.http)
+GET {{baseUrl}}/api/invoices/order/550e8400-e29b-41d4-a716-446655440001
+
+### Get Invoice by Order ID - Test Case 1 (Premium)
+GET {{baseUrl}}/api/invoices/order/8cf4d717-04cb-4dae-bfd9-43443e15c662
+
+### Get Invoice by Order ID - Test Case 2 (Basic)
+GET {{baseUrl}}/api/invoices/order/001ae722-f02d-457d-a1bc-77f859983ef1
+
+### Get Invoice by Order ID - Non-existent Order
+GET {{baseUrl}}/api/invoices/order/00000000-0000-0000-0000-000000000000
+
+### Get Invoice by Invoice ID (replace with actual invoice ID)
+GET {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241
+
+### Get Invoice by Non-existent ID
+GET {{baseUrl}}/api/invoices/00000000-0000-0000-0000-000000000000
+
+### Update Invoice Status to 'sent'
+PATCH {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241/status
+Content-Type: application/json
+
+{
+  "status": "sent"
+}
+
+### Update Invoice Status to 'failed'
+PATCH {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241/status
+Content-Type: application/json
+
+{
+  "status": "failed"
+}
+
+### Update Invoice Status - Invalid Status (should fail)
+PATCH {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241/status
+Content-Type: application/json
+
+{
+  "status": "invalid_status"
+}
+
+### Manual Test - Process Order Event (for testing without order-service)
+POST {{baseUrl}}/api/invoices/test/process-order
+Content-Type: application/json
+
+{
+  "orderId": "550e8400-e29b-41d4-a716-446655440010",
+  "userId": "550e8400-e29b-41d4-a716-446655440011",
+  "subscriptionPlan": "premium",
+  "amount": "49.99",
+  "currency": "USD",
+  "status": "pending"
+}
+
+### Manual Test - Process Order Event with EUR
+POST {{baseUrl}}/api/invoices/test/process-order
+Content-Type: application/json
+
+{
+  "orderId": "550e8400-e29b-41d4-a716-446655440012",
+  "userId": "550e8400-e29b-41d4-a716-446655440013",
+  "subscriptionPlan": "enterprise",
+  "amount": "199.99",
+  "currency": "EUR",
+  "status": "pending"
+}
+
+### Manual Test - Duplicate Order (should be handled gracefully)
+POST {{baseUrl}}/api/invoices/test/process-order
+Content-Type: application/json
+
+{
+  "orderId": "550e8400-e29b-41d4-a716-446655440010",
+  "userId": "550e8400-e29b-41d4-a716-446655440011",
+  "subscriptionPlan": "premium",
+  "amount": "49.99",
+  "currency": "USD",
+  "status": "pending"
+}
+
+### Manual Test - Invalid Data (missing required fields)
+POST {{baseUrl}}/api/invoices/test/process-order
+Content-Type: application/json
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440014",
+  "subscriptionPlan": "basic",
+  "status": "pending"
+}
+
+### Verify Statistics After Tests
+GET {{baseUrl}}/api/invoices/stats
+
+### List All Invoices After Tests (to verify creation)
+GET {{baseUrl}}/api/invoices
+
+### Filter Invoices by Currency - USD
+GET {{baseUrl}}/api/invoices?currency=USD
+
+### Filter Invoices by Currency - EUR  
+GET {{baseUrl}}/api/invoices?currency=EUR
+
+### Combined Filters - Generated Status + Pagination
+GET {{baseUrl}}/api/invoices?status=generated&page=1&limit=3
+
+### Get Swagger/OpenAPI Documentation
+GET {{baseUrl}}/docs
+
+### Get OpenAPI JSON Schema
+GET {{baseUrl}}/docs/json
