@@ -43,6 +43,52 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # Database for Invoice Service
+  postgres-invoices:
+    image: postgres:15-alpine
+    container_name: postgres-invoices
+    environment:
+      POSTGRES_DB: invoices_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_invoices_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d invoices_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Invoice Service
+  invoice-service:
+    build:
+      context: .
+      dockerfile: ./apps/invoice-service/Dockerfile
+    container_name: invoice-service
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://postgres:password@postgres-invoices:5432/invoices_db
+      RABBITMQ_URL: amqp://admin:admin@rabbitmq:5672
+      INVOICE_NUMBER_PREFIX: INV
+      GENERATION_DELAY_MS: 5000
+    ports:
+      - '3002:3002'
+    depends_on:
+      postgres-invoices:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:3002/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
   # Message Broker
   rabbitmq:
     image: rabbitmq:3-management
@@ -63,6 +109,8 @@ services:
 
 volumes:
   postgres_orders_data:
+    driver: local
+  postgres_invoices_data:
     driver: local
   rabbitmq_data:
     driver: local

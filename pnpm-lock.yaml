@@ -33,6 +33,76 @@ importers:
         specifier: ^5.2.2
         version: 5.9.2
 
+  apps/invoice-service:
+    dependencies:
+      '@fastify/cors':
+        specifier: ^11.1.0
+        version: 11.1.0
+      '@fastify/helmet':
+        specifier: ^13.0.1
+        version: 13.0.1
+      '@fastify/swagger':
+        specifier: ^9.5.1
+        version: 9.5.1
+      '@fastify/swagger-ui':
+        specifier: ^5.2.3
+        version: 5.2.3
+      '@streamflix/shared-broker':
+        specifier: workspace:*
+        version: link:../shared-broker
+      amqplib:
+        specifier: ^0.10.9
+        version: 0.10.9
+      dotenv:
+        specifier: ^16.6.1
+        version: 16.6.1
+      drizzle-orm:
+        specifier: ^0.44.5
+        version: 0.44.5(@types/pg@8.15.5)(pg@8.16.3)(postgres@3.4.7)
+      fastify:
+        specifier: ^5.5.0
+        version: 5.5.0
+      fastify-type-provider-zod:
+        specifier: 5.0.3
+        version: 5.0.3(@fastify/swagger@9.5.1)(fastify@5.5.0)(openapi-types@12.1.3)(zod@4.1.3)
+      postgres:
+        specifier: ^3.4.7
+        version: 3.4.7
+      zod:
+        specifier: ^4.1.3
+        version: 4.1.3
+    devDependencies:
+      '@types/amqplib':
+        specifier: ^0.10.7
+        version: 0.10.7
+      '@types/node':
+        specifier: ^22.18.0
+        version: 22.18.0
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^6.21.0
+        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.9.2))(eslint@8.57.1)(typescript@5.9.2)
+      '@typescript-eslint/parser':
+        specifier: ^6.21.0
+        version: 6.21.0(eslint@8.57.1)(typescript@5.9.2)
+      drizzle-kit:
+        specifier: ^0.31.4
+        version: 0.31.4
+      eslint:
+        specifier: ^8.57.1
+        version: 8.57.1
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
+      tsup:
+        specifier: ^8.5.0
+        version: 8.5.0(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
+      tsx:
+        specifier: ^4.20.5
+        version: 4.20.5
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
   apps/order-service:
     dependencies:
       '@fastify/cors':
