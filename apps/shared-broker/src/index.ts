@@ -36,4 +36,5 @@ export type {
 export { EventDispatcher } from './events/event-dispatcher.js'
 export { EventFactory } from './events/event-factory.js'
 export { RabbitMQConnection } from './implementations/rabbitmq-connection.js'
+export { RabbitMQEventConsumer } from './implementations/rabbitmq-event-consumer.js'
 export { RabbitMQEventPublisher } from './implementations/rabbitmq-event-publisher.js'

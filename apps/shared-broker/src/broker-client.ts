@@ -2,12 +2,18 @@ import { BrokerConfig, defaultBrokerConfig } from './config/broker.config.js'
 import { EventDispatcher } from './events/event-dispatcher.js'
 import { EventFactory } from './events/event-factory.js'
 import { RabbitMQConnection } from './implementations/rabbitmq-connection.js'
+import { RabbitMQEventConsumer } from './implementations/rabbitmq-event-consumer.js'
 import { RabbitMQEventPublisher } from './implementations/rabbitmq-event-publisher.js'
 import {
   IEventDispatcher,
   IEventFactory,
 } from './interfaces/events.interface.js'
-import { IMessageBrokerConnection } from './interfaces/message-broker.interface.js'
+import {
+  ConsumeOptions,
+  EventHandler,
+  IEventConsumer,
+  IMessageBrokerConnection,
+} from './interfaces/message-broker.interface.js'
 
 /**
  * Main broker client that orchestrates all messaging components
@@ -18,6 +24,7 @@ export class BrokerClient {
   private readonly connection: IMessageBrokerConnection
   private readonly eventFactory: IEventFactory
   private readonly eventDispatcher: IEventDispatcher
+  private readonly eventConsumer: IEventConsumer
 
   constructor(config: BrokerConfig = defaultBrokerConfig) {
     // Create instances following Dependency Injection pattern
@@ -27,6 +34,9 @@ export class BrokerClient {
     )
     this.eventFactory = new EventFactory()
     this.eventDispatcher = new EventDispatcher(eventPublisher)
+    this.eventConsumer = new RabbitMQEventConsumer(
+      this.connection as RabbitMQConnection,
+    )
   }
 
   /**
@@ -77,6 +87,33 @@ export class BrokerClient {
   }): Promise<void> {
     const event = this.eventFactory.createOrderCreatedEvent(orderData)
     await this.eventDispatcher.dispatch(event)
+  }
+
+  /**
+   * Subscribe to events with a handler
+   */
+  async subscribeToEvents<T extends Record<string, any>>(
+    queue: string,
+    routingKey: string,
+    handler: EventHandler<T>,
+    options?: ConsumeOptions,
+  ): Promise<void> {
+    await this.eventConsumer.subscribe(queue, routingKey, handler, options)
+  }
+
+  /**
+   * Convenience method to subscribe to order created events
+   */
+  async subscribeToOrderCreated(
+    handler: EventHandler<any>,
+    options?: ConsumeOptions,
+  ): Promise<void> {
+    await this.eventConsumer.subscribe(
+      'invoice-service-orders',
+      'order.created',
+      handler,
+      options,
+    )
   }
 }
 
