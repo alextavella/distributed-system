@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-// Invoice status enum
+// ===== BASE SCHEMAS =====
 export const InvoiceStatusSchema = z.enum([
   'pending',
   'processing',
@@ -9,25 +9,23 @@ export const InvoiceStatusSchema = z.enum([
   'sent',
 ])
 
-// Base invoice schema
 export const InvoiceSchema = z.object({
-  id: z.string().uuid(),
-  orderId: z.string().uuid(),
+  id: z.uuid(),
+  orderId: z.uuid(),
   invoiceNumber: z.string().min(1).max(50),
   status: InvoiceStatusSchema,
   amount: z.string().regex(/^\d+\.\d{2}$/),
   currency: z.string().length(3),
-  orderData: z.record(z.any()).optional(),
+  orderData: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
   generatedAt: z.date().nullable(),
   sentAt: z.date().nullable(),
 })
 
-// Invoice item schema
 export const InvoiceItemSchema = z.object({
-  id: z.string().uuid(),
-  invoiceId: z.string().uuid(),
+  id: z.uuid(),
+  invoiceId: z.uuid(),
   itemType: z.string().min(1).max(50),
   itemId: z.string().min(1).max(100),
   itemName: z.string().min(1).max(200),
@@ -36,57 +34,110 @@ export const InvoiceItemSchema = z.object({
   totalPrice: z.string().regex(/^\d+\.\d{2}$/),
 })
 
-// Invoice with items schema
-export const InvoiceWithItemsSchema = InvoiceSchema.extend({
-  items: z.array(InvoiceItemSchema),
+// ===== API SCHEMAS =====
+const InvoiceDto = z.object({
+  id: z.uuid(),
+  orderId: z.uuid(),
+  invoiceNumber: z.string(),
+  status: InvoiceStatusSchema,
+  amount: z.string(),
+  currency: z.string(),
+  orderData: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  generatedAt: z.string().nullable(),
+  sentAt: z.string().nullable(),
+  items: z.array(z.any()).default([]),
 })
 
-// Query schemas
-export const InvoiceQuerySchema = z.object({
-  page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(100).default(20),
+// Params
+export const InvoiceIdParams = z.object({
+  id: z.uuid(),
+})
+
+export const OrderIdParams = z.object({
+  orderId: z.uuid(),
+})
+
+// Query
+export const InvoicesQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
   status: InvoiceStatusSchema.optional(),
-  orderId: z.string().uuid().optional(),
+  orderId: z.uuid().optional(),
 })
 
-// Response schemas
-export const InvoiceResponseSchema = z.object({
-  success: z.boolean(),
-  data: InvoiceWithItemsSchema,
+// Body
+export const UpdateStatusBody = z.object({
+  status: InvoiceStatusSchema,
 })
 
-export const InvoicesListResponseSchema = z.object({
-  success: z.boolean(),
-  data: z.object({
-    invoices: z.array(InvoiceWithItemsSchema),
-    pagination: z.object({
-      page: z.number(),
-      limit: z.number(),
-      total: z.number(),
-      pages: z.number(),
-    }),
+export const TestOrderBody = z.object({
+  orderId: z.uuid(),
+  userId: z.uuid(),
+  subscriptionPlan: z.string().min(1).default('premium'),
+  amount: z.string().regex(/^\d+\.\d{2}$/),
+  currency: z.string().length(3),
+  status: z.string().default('pending'),
+})
+
+// Export individual schemas for route usage
+export {
+  TestOrderBody as ProcessTestOrderBody,
+  UpdateStatusBody as UpdateInvoiceStatusBody,
+}
+
+// Response
+export const InvoiceResponse = InvoiceDto
+
+export const InvoicesListResponse = z.object({
+  invoices: z.array(InvoiceDto),
+  pagination: z.object({
+    page: z.number(),
+    limit: z.number(),
+    total: z.number(),
   }),
 })
 
-export const SuccessResponseSchema = z.object({
-  success: z.boolean(),
+export const InvoiceStatsResponse = z.object({
+  total: z.number(),
+  pending: z.number().optional(),
+  generated: z.number().optional(),
+})
+
+export const UpdateStatusResponse = z.object({
+  id: z.uuid(),
+  orderId: z.uuid(),
+  invoiceNumber: z.string(),
+  status: InvoiceStatusSchema,
+  amount: z.string(),
+  currency: z.string(),
+  orderData: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  generatedAt: z.string().nullable(),
+  sentAt: z.string().nullable(),
   message: z.string(),
 })
 
-// Error response schema
-export const ErrorResponseSchema = z.object({
-  success: z.boolean().default(false),
+export const TestOrderResponse = z.object({
+  orderId: z.uuid(),
+  processedAt: z.string(),
+  message: z.string(),
+})
+
+// Export individual schemas for route usage
+export {
+  TestOrderResponse as ProcessTestOrderResponse,
+  UpdateStatusResponse as UpdateInvoiceStatusResponse,
+}
+
+export const ErrorResponse = z.object({
   error: z.string(),
   code: z.string().optional(),
 })
 
-// Types
+// ===== TYPES =====
 export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>
 export type Invoice = z.infer<typeof InvoiceSchema>
 export type InvoiceItem = z.infer<typeof InvoiceItemSchema>
-export type InvoiceWithItems = z.infer<typeof InvoiceWithItemsSchema>
-export type InvoiceQuery = z.infer<typeof InvoiceQuerySchema>
-export type InvoiceResponse = z.infer<typeof InvoiceResponseSchema>
-export type InvoicesListResponse = z.infer<typeof InvoicesListResponseSchema>
-export type SuccessResponse = z.infer<typeof SuccessResponseSchema>
-export type ErrorResponse = z.infer<typeof ErrorResponseSchema>
