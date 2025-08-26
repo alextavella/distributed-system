@@ -46,6 +46,11 @@ streamflix-microservices/
 
 ## 📚 Documentação
 
+### 🚀 **Guias de Desenvolvimento**
+- [**Development Guidelines**](./docs/DEVELOPMENT_GUIDELINES.md) - Guia completo para criar novas features
+- [**Code Standards**](./docs/CODE_STANDARDS.md) - Padrões de código obrigatórios
+- [**Database Migrations**](./docs/architecture/DATABASE_MIGRATIONS.md) - Boas práticas para migrations
+
 ### Arquitetura
 
 - **[Message Broker Architecture](./docs/architecture/README.md)** - Documentação completa da arquitetura de message broker
