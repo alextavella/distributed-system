@@ -1,3 +1,4 @@
+import { getBrokerClient } from '@streamflix/shared-broker'
 import { db } from '../db/connection.js'
 import {
   orderItems,
@@ -6,10 +7,6 @@ import {
   type Order,
 } from '../db/schema.js'
 import type { CreateOrderRequest } from '../types/order.js'
-import {
-  messageBrokerService,
-  type OrderCreatedEvent,
-} from './message-broker.service.js'
 
 export class OrderService {
   async createOrder(data: CreateOrderRequest): Promise<Order> {
@@ -49,19 +46,17 @@ export class OrderService {
 
       await tx.insert(orderItems).values(orderItemsData)
 
-      // Publish order created event
-      const orderCreatedEvent: OrderCreatedEvent = {
-        orderId: order.id,
-        userId: order.userId,
-        subscriptionPlan: order.subscriptionPlan,
-        amount: order.amount,
-        currency: order.currency,
-        status: order.status,
-        createdAt: order.createdAt.toISOString(),
-      }
-
+      // Publish order created event using the new broker architecture
       try {
-        await messageBrokerService.publishOrderCreatedEvent(orderCreatedEvent)
+        const brokerClient = getBrokerClient()
+        await brokerClient.publishOrderCreated({
+          orderId: order.id,
+          userId: order.userId,
+          subscriptionPlan: order.subscriptionPlan,
+          amount: order.amount,
+          currency: order.currency,
+          status: order.status,
+        })
       } catch (error) {
         console.error('Failed to publish order created event:', error)
         // Note: We don't throw here to avoid rolling back the transaction

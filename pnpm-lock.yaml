@@ -47,6 +47,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.2.3
         version: 5.2.3
+      '@streamflix/shared-broker':
+        specifier: workspace:*
+        version: link:../shared-broker
       add:
         specifier: ^2.0.6
         version: 2.0.6
@@ -102,6 +105,25 @@ importers:
       tsx:
         specifier: ^4.20.5
         version: 4.20.5
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.2
+
+  apps/shared-broker:
+    dependencies:
+      amqplib:
+        specifier: ^0.10.4
+        version: 0.10.9
+    devDependencies:
+      '@types/amqplib':
+        specifier: ^0.10.7
+        version: 0.10.7
+      '@types/node':
+        specifier: ^22.10.5
+        version: 22.18.0
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.0(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
       typescript:
         specifier: ^5.9.2
         version: 5.9.2

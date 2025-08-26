@@ -1,26 +1,31 @@
 # Build stage
 FROM node:22-alpine AS builder
 
-WORKDIR /app
+# Set working directory to workspace root
+WORKDIR /workspace
 
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-COPY tsconfig.json ./
+# Copy workspace configuration
+COPY pnpm-workspace.yaml ./
+COPY package.json ./
 
-# Install dependencies
+# Copy shared-broker
+COPY apps/shared-broker/ ./apps/shared-broker/
+
+# Copy order-service
+COPY apps/order-service/ ./apps/order-service/
+
+# Install dependencies for the entire workspace
 RUN pnpm install --no-frozen-lockfile
 
-# Copy source code
-COPY src/ ./src/
-COPY drizzle.config.ts ./
+# Build shared-broker first
+WORKDIR /workspace/apps/shared-broker
+RUN pnpm run build
 
-# Create drizzle directory if it doesn't exist
-RUN mkdir -p drizzle
-
-# Build the application
+# Build order-service
+WORKDIR /workspace/apps/order-service
 RUN pnpm run build
 
 # Production stage
@@ -36,16 +41,26 @@ RUN npm install -g pnpm
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nextjs -u 1001
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
+# Copy workspace files needed for production
+COPY --from=builder /workspace/pnpm-workspace.yaml ./
+COPY --from=builder /workspace/package.json ./
+
+# Copy shared-broker built package
+COPY --from=builder /workspace/apps/shared-broker/package.json ./apps/shared-broker/
+COPY --from=builder /workspace/apps/shared-broker/dist ./apps/shared-broker/dist
+
+# Copy order-service files
+COPY --from=builder /workspace/apps/order-service/package.json ./apps/order-service/
+COPY --from=builder /workspace/apps/order-service/dist ./apps/order-service/dist
+COPY --from=builder /workspace/apps/order-service/drizzle ./apps/order-service/drizzle
+COPY --from=builder /workspace/apps/order-service/drizzle.config.ts ./apps/order-service/
 
 # Install only production dependencies
+WORKDIR /app/apps/order-service
 RUN pnpm install --no-frozen-lockfile --prod
 
-# Copy built application from builder stage
-COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
-COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./
+# Change ownership
+RUN chown -R nextjs:nodejs /app
 
 # Switch to non-root user
 USER nextjs

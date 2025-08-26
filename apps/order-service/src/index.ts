@@ -2,6 +2,10 @@ import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import swagger from '@fastify/swagger'
 import swaggerUI from '@fastify/swagger-ui'
+import {
+  initializeBrokerClient,
+  shutdownBrokerClient,
+} from '@streamflix/shared-broker'
 import 'dotenv/config'
 import Fastify from 'fastify'
 import {
@@ -12,7 +16,6 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { orderRoutes } from './routes/orders.js'
-import { messageBrokerService } from './services/message-broker.service.js'
 
 const fastify = Fastify({
   logger: {
@@ -126,21 +129,21 @@ fastify.setErrorHandler((error, request, reply) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   fastify.log.info('Received SIGTERM, shutting down gracefully')
-  await messageBrokerService.disconnect()
+  await shutdownBrokerClient()
   await fastify.close()
 })
 
 process.on('SIGINT', async () => {
   fastify.log.info('Received SIGINT, shutting down gracefully')
-  await messageBrokerService.disconnect()
+  await shutdownBrokerClient()
   await fastify.close()
 })
 
 // Start server
 const start = async () => {
   try {
-    // Initialize RabbitMQ connection
-    await messageBrokerService.connect()
+    // Initialize broker client
+    await initializeBrokerClient()
 
     const host = process.env.HOST || '0.0.0.0'
     const port = parseInt(process.env.PORT || '3001')
@@ -153,7 +156,7 @@ const start = async () => {
     )
   } catch (err) {
     fastify.log.error(err)
-    await messageBrokerService.disconnect()
+    await shutdownBrokerClient()
     process.exit(1)
   }
 }

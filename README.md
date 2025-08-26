@@ -26,11 +26,30 @@ streamflix-microservices/
 - **TypeScript** - Tipagem estática
 - **ESLint + Prettier** - Linting e formatação
 
-## 📋 Serviços Disponíveis
+## 📋 Serviços e Pacotes
 
+### Microserviços
 | Serviço | Porta | Descrição | Status |
 |---------|-------|-----------|--------|
 | order-service | 3001 | Gerenciamento de pedidos | ✅ Ativo |
+
+### Pacotes Compartilhados
+| Pacote | Versão | Descrição | Status |
+|--------|--------|-----------|--------|
+| @streamflix/shared-broker | 1.0.0 | Message broker architecture | ✅ Ativo |
+
+## 📚 Documentação
+
+### Arquitetura
+
+- **[Message Broker Architecture](./docs/architecture/README.md)** - Documentação completa da arquitetura de message broker
+  - [Tutorial](./docs/architecture/GETTING_STARTED_TUTORIAL.md) - Guia passo-a-passo para implementação
+  - [Referência Rápida](./docs/architecture/QUICK_REFERENCE.md) - Consulta rápida para tarefas comuns
+  - [Documentação Técnica](./docs/architecture/MESSAGE_BROKER_ARCHITECTURE.md) - Visão detalhada da arquitetura
+
+### Features
+
+- **[CREATE_ORDER Feature](./docs/feature/01.CREATE_ORDER.md)** - Documentação da funcionalidade de criação de pedidos
 
 ## 🛠️ Instalação
 
