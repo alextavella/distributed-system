@@ -1,69 +1,83 @@
 import { getBrokerClient } from '@streamflix/shared-broker'
+import { eq } from 'drizzle-orm'
 import { db } from '../db/connection.js'
-import {
-  orderItems,
-  orders,
-  type NewOrderItem,
-  type Order,
-} from '../db/schema.js'
-import type { CreateOrderRequest } from '../types/order.js'
+import { orders, type Order } from '../db/schema.js'
 
 export class OrderService {
-  async createOrder(data: CreateOrderRequest): Promise<Order> {
-    return await db.transaction(async tx => {
-      // Calculate total amount from items
-      const totalAmount = data.items.reduce((sum, item) => {
-        const quantity = parseFloat(item.quantity)
-        const unitPrice = parseFloat(item.unitPrice)
-        return sum + quantity * unitPrice
-      }, 0)
+  /**
+   * Create a new order (simplified)
+   */
+  async createOrder(orderData: {
+    userId: string
+    subscriptionPlan: string
+    amount: string
+    currency: string
+  }): Promise<Order> {
+    try {
+      console.log('📝 Creating order...')
 
-      // Create order
-      const [order] = await tx
+      // Create order in database
+      const [order] = await db
         .insert(orders)
         .values({
-          userId: data.userId,
-          subscriptionPlan: data.subscriptionPlan,
-          amount: totalAmount.toFixed(2),
-          currency: data.currency,
-          paymentMethod: data.paymentMethod,
-          metadata: data.metadata,
+          ...orderData,
+          status: 'pending',
         })
         .returning()
 
-      // Create order items
-      const orderItemsData: NewOrderItem[] = data.items.map(item => ({
+      console.log(`✅ Created order: ${order.id}`)
+
+      // Publish event (simplified)
+      const brokerClient = getBrokerClient()
+      await brokerClient.publishOrderCreated({
         orderId: order.id,
-        itemType: item.itemType,
-        itemId: item.itemId,
-        itemName: item.itemName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: (
-          parseFloat(item.quantity) * parseFloat(item.unitPrice)
-        ).toFixed(2),
-      }))
-
-      await tx.insert(orderItems).values(orderItemsData)
-
-      // Publish order created event using the new broker architecture
-      try {
-        const brokerClient = getBrokerClient()
-        await brokerClient.publishOrderCreated({
-          orderId: order.id,
-          userId: order.userId,
-          subscriptionPlan: order.subscriptionPlan,
-          amount: order.amount,
-          currency: order.currency,
-          status: order.status,
-        })
-      } catch (error) {
-        console.error('Failed to publish order created event:', error)
-        // Note: We don't throw here to avoid rolling back the transaction
-        // In production, you might want to implement retry logic or dead letter queue
-      }
+        userId: order.userId,
+        subscriptionPlan: order.subscriptionPlan,
+        amount: order.amount,
+        currency: order.currency,
+        status: order.status,
+      })
+      console.log(`📤 Published order.created event for: ${order.id}`)
 
       return order
+    } catch (error) {
+      console.error('❌ Error creating order:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get order by ID
+   */
+  async getOrderById(id: string): Promise<Order | null> {
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.id, id),
     })
+    return order || null
+  }
+
+  /**
+   * Get all orders (simple list)
+   */
+  async getOrders(): Promise<Order[]> {
+    return await db.query.orders.findMany({
+      orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+    })
+  }
+
+  /**
+   * Get order statistics
+   */
+  async getOrderStats(): Promise<{
+    total: number
+    pending: number
+    completed: number
+  }> {
+    const allOrders = await db.query.orders.findMany()
+    return {
+      total: allOrders.length,
+      pending: allOrders.filter(o => o.status === 'pending').length,
+      completed: allOrders.filter(o => o.status === 'completed').length,
+    }
   }
 }

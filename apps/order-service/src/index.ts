@@ -2,161 +2,116 @@ import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import swagger from '@fastify/swagger'
 import swaggerUI from '@fastify/swagger-ui'
-import {
-  initializeBrokerClient,
-  shutdownBrokerClient,
-} from '@streamflix/shared-broker'
+import { initializeBrokerClient, shutdownBrokerClient } from '@streamflix/shared-broker'
 import 'dotenv/config'
 import Fastify from 'fastify'
-import {
-  hasZodFastifySchemaValidationErrors,
-  isResponseSerializationError,
-  jsonSchemaTransform,
-  serializerCompiler,
-  validatorCompiler,
-} from 'fastify-type-provider-zod'
+import { healthRoutes } from './routes/health.js'
 import { orderRoutes } from './routes/orders.js'
 
+// Create Fastify instance
 const fastify = Fastify({
   logger: {
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   },
 })
 
-// Add schema validator and serializer
-fastify.setValidatorCompiler(validatorCompiler)
-fastify.setSerializerCompiler(serializerCompiler)
-
-// Register plugins
-await fastify.register(helmet, {
-  contentSecurityPolicy: false,
-})
-
-await fastify.register(cors, {
-  origin: true,
-  credentials: true,
-})
-
-// Swagger documentation
-await fastify.register(swagger, {
-  openapi: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Order Service API',
-      description: 'StreamFlix Order Management Service',
-      version: '1.0.0',
-    },
-    servers: [
-      {
-        url: `http://localhost:${process.env.PORT || 3001}`,
-        description: 'Development server',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
-  },
-  transform: jsonSchemaTransform,
-})
-
-await fastify.register(swaggerUI, {
-  routePrefix: '/docs',
-  uiConfig: {
-    docExpansion: 'full',
-    deepLinking: false,
-  },
-  staticCSP: true,
-  transformSpecificationClone: true,
-})
-
-// Health check endpoint
-fastify.get('/health', async (request, reply) => {
-  return {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'order-service',
-    version: '1.0.0',
-  }
-})
-
-// Register routes
-await fastify.register(orderRoutes, { prefix: '/api/orders' })
-
-// Global error handler
-fastify.setErrorHandler((error, request, reply) => {
-  fastify.log.error(error)
-
-  if (hasZodFastifySchemaValidationErrors(error)) {
-    return reply.code(400).send({
-      success: false,
-      error: 'Validation Error',
-      message: "Request doesn't match the schema",
-      statusCode: 400,
-      details: {
-        issues: error.validation,
-        method: request.method,
-        url: request.url,
-      },
-    })
-  }
-
-  if (isResponseSerializationError(error)) {
-    return reply.code(500).send({
-      success: false,
-      error: 'Internal Server Error',
-      message: "Response doesn't match the schema",
-      statusCode: 500,
-      details: {
-        issues: (error.cause as any)?.issues || [],
-        method: request.method,
-        url: request.url,
-      },
-    })
-  }
-
-  reply.status(500).send({
-    success: false,
-    error: 'Internal server error',
+// Setup function
+async function setupFastify() {
+  // Register CORS
+  await fastify.register(cors, {
+    origin: true,
+    credentials: true,
   })
-})
+
+  // Register Helmet
+  await fastify.register(helmet, {
+    contentSecurityPolicy: false,
+  })
+
+  // Register Swagger
+  await fastify.register(swagger, {
+    openapi: {
+      openapi: '3.0.0',
+      info: {
+        title: 'Order Service API',
+        description: 'Simple Order Service for Subscription Management',
+        version: '1.0.0',
+      },
+      servers: [
+        {
+          url: `http://localhost:${process.env.PORT || 3001}`,
+          description: 'Development server',
+        },
+      ],
+    },
+  })
+
+  // Register Swagger UI
+  await fastify.register(swaggerUI, {
+    routePrefix: '/docs',
+    staticCSP: true,
+  })
+
+  // Register routes
+  await fastify.register(healthRoutes)
+  await fastify.register(orderRoutes, { prefix: '/api' })
+
+  // Simple error handler
+  fastify.setErrorHandler((error, _request, reply) => {
+    fastify.log.error(error)
+    return reply.status(500).send({
+      success: false,
+      error: 'Internal server error',
+    })
+  })
+}
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  fastify.log.info('Received SIGTERM, shutting down gracefully')
-  await shutdownBrokerClient()
-  await fastify.close()
+  console.log('Shutting down...')
+  try {
+    await shutdownBrokerClient()
+    await fastify.close()
+    process.exit(0)
+  } catch (error) {
+    console.error('Error during shutdown:', error)
+    process.exit(1)
+  }
 })
 
 process.on('SIGINT', async () => {
-  fastify.log.info('Received SIGINT, shutting down gracefully')
-  await shutdownBrokerClient()
-  await fastify.close()
+  console.log('Shutting down...')
+  try {
+    await shutdownBrokerClient()
+    await fastify.close()
+    process.exit(0)
+  } catch (error) {
+    console.error('Error during shutdown:', error)
+    process.exit(1)
+  }
 })
 
 // Start server
 const start = async () => {
   try {
+    // Setup Fastify
+    await setupFastify()
+
     // Initialize broker client
+    console.log('🔌 Initializing broker...')
     await initializeBrokerClient()
 
+    // Start server
     const host = process.env.HOST || '0.0.0.0'
     const port = parseInt(process.env.PORT || '3001')
 
     await fastify.listen({ host, port })
 
-    fastify.log.info(`🚀 Order Service running at http://${host}:${port}`)
-    fastify.log.info(
-      `📚 API Documentation available at http://${host}:${port}/docs`,
-    )
+    console.log(`🚀 Order Service running at http://${host}:${port}`)
+    console.log(`📚 Docs available at http://${host}:${port}/docs`)
+    console.log(`🏥 Health check at http://${host}:${port}/health`)
   } catch (err) {
-    fastify.log.error(err)
-    await shutdownBrokerClient()
+    console.error('❌ Failed to start service:', err)
     process.exit(1)
   }
 }
