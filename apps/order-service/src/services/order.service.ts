@@ -57,12 +57,55 @@ export class OrderService {
   }
 
   /**
-   * Get all orders (simple list)
+   * Get all orders with pagination and filtering
    */
-  async getOrders(): Promise<Order[]> {
-    return await db.query.orders.findMany({
-      orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+  async getOrders(query?: {
+    page?: number
+    limit?: number
+    status?: string
+    userId?: string
+  }): Promise<{
+    orders: Order[]
+    pagination: {
+      page: number
+      limit: number
+      total: number
+    }
+  }> {
+    const page = query?.page || 1
+    const limit = query?.limit || 20
+    const offset = (page - 1) * limit
+
+    // Build where conditions
+    const conditions: any[] = []
+    if (query?.status) {
+      conditions.push(eq(orders.status, query.status as any))
+    }
+    if (query?.userId) {
+      conditions.push(eq(orders.userId, query.userId))
+    }
+
+    // Get total count
+    const totalOrders = await db.query.orders.findMany({
+      where: conditions.length > 0 ? conditions[0] : undefined,
     })
+
+    // Get paginated results
+    const paginatedOrders = await db.query.orders.findMany({
+      where: conditions.length > 0 ? conditions[0] : undefined,
+      orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+      limit,
+      offset,
+    })
+
+    return {
+      orders: paginatedOrders,
+      pagination: {
+        page,
+        limit,
+        total: totalOrders.length,
+      },
+    }
   }
 
   /**
