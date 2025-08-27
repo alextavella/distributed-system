@@ -12,6 +12,7 @@ import {
   serializerCompiler,
   validatorCompiler,
 } from 'fastify-type-provider-zod'
+import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { healthRoutes } from './routes/health.js'
 import { orderRoutes } from './routes/orders.js'
 
@@ -63,18 +64,12 @@ async function setupFastify() {
     staticCSP: true,
   })
 
+  // Register error handler plugin
+  await fastify.register(errorHandlerPlugin)
+
   // Register routes
   await fastify.register(healthRoutes)
   await fastify.register(orderRoutes, { prefix: '/api' })
-
-  // Simple error handler
-  fastify.setErrorHandler((error, _request, reply) => {
-    fastify.log.error(error)
-    return reply.status(500).send({
-      success: false,
-      error: 'Internal server error',
-    })
-  })
 }
 
 // Graceful shutdown
