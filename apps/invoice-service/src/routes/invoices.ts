@@ -7,65 +7,12 @@ import {
   InvoiceResponseSchema,
   InvoicesListResponseSchema,
   InvoicesQuerySchema,
-  TestOrderBodySchema,
-  TestOrderResponseSchema,
   UpdateStatusBodySchema,
 } from '../types/invoice.js'
 
 export async function invoiceRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>()
   const invoiceService = new InvoiceService()
-
-  // Test order endpoint (for testing invoice generation)
-  app.post(
-    '/test-order',
-    {
-      schema: {
-        description: 'Create a test invoice from order data',
-        tags: ['invoices'],
-        summary: 'Create Test Invoice',
-        body: TestOrderBodySchema,
-        response: {
-          201: TestOrderResponseSchema,
-          400: ErrorResponseSchema,
-          500: ErrorResponseSchema,
-        },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const orderData = request.body
-        // Convert TestOrderBody to CreateInvoiceData format
-        const invoiceData = {
-          orderId: orderData.orderId,
-          userId: orderData.customerId,
-          amount: orderData.amount.toString(),
-          currency: orderData.currency,
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-          metadata: orderData.orderData || {},
-        }
-
-        const invoice = await invoiceService.createInvoice(invoiceData)
-
-        return reply.code(201).send({
-          id: invoice.id,
-          orderId: invoice.orderId,
-          invoiceNumber: invoice.invoiceNumber,
-          status: invoice.status,
-          amount: invoice.amount,
-          currency: invoice.currency,
-          orderData: invoice.orderData || {},
-          createdAt: invoice.createdAt,
-          updatedAt: invoice.updatedAt,
-        })
-      } catch (error) {
-        console.error('Error creating test invoice:', error)
-        return reply.code(500).send({
-          error: 'Failed to create test invoice',
-        })
-      }
-    },
-  )
 
   // Get invoice by ID
   app.get(

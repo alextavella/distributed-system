@@ -1,6 +1,12 @@
 @baseUrl = http://localhost:3002
+@orderServiceUrl = http://localhost:3001
+@contentType = application/json
 
-### Health Check - Invoice Service
+### ========================================
+### HEALTH CHECKS & SERVICE STATUS
+### ========================================
+
+### Health Check - Basic
 GET {{baseUrl}}/health
 
 ### Health Check - Detailed (with dependencies)
@@ -9,129 +15,131 @@ GET {{baseUrl}}/health/detailed
 ### Readiness Check
 GET {{baseUrl}}/ready
 
-### Get Invoice Statistics
-GET {{baseUrl}}/api/invoices/stats
+### ========================================
+### GET ORDERS FIRST (to use real order IDs)
+### ========================================
 
-### List All Invoices (default pagination)
+# @name getOrders
+GET {{orderServiceUrl}}/api/orders
+
+###
+
+# Extract order IDs from the response
+@premiumOrderId = {{getOrders.response.body.$.orders[0].id}}
+@basicOrderId = {{getOrders.response.body.$.orders[1].id}}
+@enterpriseOrderId = {{getOrders.response.body.$.orders[2].id}}
+
+### ========================================
+### INVOICE RETRIEVAL TESTS
+### ========================================
+
+### Test Case 1: List All Invoices (default pagination)
 GET {{baseUrl}}/api/invoices
 
-### List Invoices with Pagination
+###
+
+### Test Case 2: List Invoices with Pagination
 GET {{baseUrl}}/api/invoices?page=1&limit=5
 
-### List Invoices - Filter by Status: Generated
+###
+
+### Test Case 3: List Invoices - Filter by Status: Generated
 GET {{baseUrl}}/api/invoices?status=generated
 
-### List Invoices - Filter by Status: Pending
+###
+
+### Test Case 4: List Invoices - Filter by Status: Pending
 GET {{baseUrl}}/api/invoices?status=pending
 
-### Get Invoice by Specific Order ID (replace with actual order ID from order.http)
-GET {{baseUrl}}/api/invoices/order/3229120c-4a6d-4c1c-a2bc-8c3d8d40c245
+###
 
-### Get Invoice by Order ID - Test Case 1 (Premium)
-GET {{baseUrl}}/api/invoices/order/8cf4d717-04cb-4dae-bfd9-43443e15c662
+### Test Case 5: Filter Invoices by Order ID - Premium Order
+GET {{baseUrl}}/api/invoices?orderId={{premiumOrderId}}
 
-### Get Invoice by Order ID - Test Case 2 (Basic)
-GET {{baseUrl}}/api/invoices/order/001ae722-f02d-457d-a1bc-77f859983ef1
+###
 
-### Get Invoice by Order ID - Non-existent Order
-GET {{baseUrl}}/api/invoices/order/00000000-0000-0000-0000-000000000000
+### Test Case 6: Filter Invoices by Order ID - Basic Order
+GET {{baseUrl}}/api/invoices?orderId={{basicOrderId}}
 
-### Get Invoice by Invoice ID (replace with actual invoice ID)
-GET {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241
+###
 
-### Get Invoice by Non-existent ID
+### Test Case 7: Filter Invoices by Order ID - Enterprise Order
+GET {{baseUrl}}/api/invoices?orderId={{enterpriseOrderId}}
+
+###
+
+### Test Case 8: Combined Filters - Generated Status + Pagination
+GET {{baseUrl}}/api/invoices?status=generated&page=1&limit=3
+
+###
+
+### Test Case 9: Combined Filters - Order ID + Status
+GET {{baseUrl}}/api/invoices?orderId={{premiumOrderId}}&status=pending
+
+###
+
+### ========================================
+### INVOICE LOOKUP TESTS
+### ========================================
+
+### Test Case 10: Get Invoice by Non-existent Invoice ID
 GET {{baseUrl}}/api/invoices/00000000-0000-0000-0000-000000000000
 
-### Update Invoice Status to 'sent'
-PATCH {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241/status
-Content-Type: application/json
+###
+
+### ========================================
+### INVOICE STATUS UPDATE TESTS
+### ========================================
+
+### Test Case 11: Update Invoice Status to 'generated'
+# Note: This will only work if there are existing invoices
+# Replace INVOICE_ID with an actual invoice ID from the list
+PATCH {{baseUrl}}/api/invoices/INVOICE_ID/status
+Content-Type: {{contentType}}
 
 {
-  "status": "sent"
+  "status": "generated"
 }
 
-### Update Invoice Status to 'failed'
-PATCH {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241/status
-Content-Type: application/json
+###
 
-{
-  "status": "failed"
-}
-
-### Update Invoice Status - Invalid Status (should fail)
-PATCH {{baseUrl}}/api/invoices/321b6fa0-1b9c-4ff9-899f-89aafe34a241/status
-Content-Type: application/json
+### Test Case 12: Update Invoice Status - Invalid Status (should fail)
+PATCH {{baseUrl}}/api/invoices/INVOICE_ID/status
+Content-Type: {{contentType}}
 
 {
   "status": "invalid_status"
 }
 
-### Manual Test - Process Order Event (for testing without order-service)
-POST {{baseUrl}}/api/invoices/test/process-order
-Content-Type: application/json
+###
 
-{
-  "orderId": "550e8400-e29b-41d4-a716-446655440010",
-  "userId": "550e8400-e29b-41d4-a716-446655440011",
-  "subscriptionPlan": "premium",
-  "amount": "49.99",
-  "currency": "USD",
-  "status": "pending"
-}
+### ========================================
+### VERIFICATION TESTS (After All Operations)
+### ========================================
 
-### Manual Test - Process Order Event with EUR
-POST {{baseUrl}}/api/invoices/test/process-order
-Content-Type: application/json
-
-{
-  "orderId": "550e8400-e29b-41d4-a716-446655440012",
-  "userId": "550e8400-e29b-41d4-a716-446655440013",
-  "subscriptionPlan": "enterprise",
-  "amount": "199.99",
-  "currency": "EUR",
-  "status": "pending"
-}
-
-### Manual Test - Duplicate Order (should be handled gracefully)
-POST {{baseUrl}}/api/invoices/test/process-order
-Content-Type: application/json
-
-{
-  "orderId": "550e8400-e29b-41d4-a716-446655440010",
-  "userId": "550e8400-e29b-41d4-a716-446655440011",
-  "subscriptionPlan": "premium",
-  "amount": "49.99",
-  "currency": "USD",
-  "status": "pending"
-}
-
-### Manual Test - Invalid Data (missing required fields)
-POST {{baseUrl}}/api/invoices/test/process-order
-Content-Type: application/json
-
-{
-  "userId": "550e8400-e29b-41d4-a716-446655440014",
-  "subscriptionPlan": "basic",
-  "status": "pending"
-}
-
-### Verify Statistics After Tests
-GET {{baseUrl}}/api/invoices/stats
-
-### List All Invoices After Tests (to verify creation)
+### Test Case 13: Verify Final Invoice List
 GET {{baseUrl}}/api/invoices
 
-### Filter Invoices by Currency - USD
-GET {{baseUrl}}/api/invoices?currency=USD
+###
 
-### Filter Invoices by Currency - EUR  
-GET {{baseUrl}}/api/invoices?currency=EUR
+### Test Case 14: Verify Generated Invoices
+GET {{baseUrl}}/api/invoices?status=generated
 
-### Combined Filters - Generated Status + Pagination
-GET {{baseUrl}}/api/invoices?status=generated&page=1&limit=3
+###
 
-### Get Swagger/OpenAPI Documentation
+### Test Case 15: Verify Pending Invoices
+GET {{baseUrl}}/api/invoices?status=pending
+
+###
+
+### ========================================
+### DOCUMENTATION & API TESTS
+### ========================================
+
+### Test Case 16: Get Swagger/OpenAPI Documentation
 GET {{baseUrl}}/docs
 
-### Get OpenAPI JSON Schema
+###
+
+### Test Case 17: Get OpenAPI JSON Schema
 GET {{baseUrl}}/docs/json

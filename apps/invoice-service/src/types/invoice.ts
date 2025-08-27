@@ -1,21 +1,31 @@
 import { z } from 'zod'
 
+/**
+ * Invoice Types and Schemas
+ *
+ * IMPORTANT: We use z.uuid() instead of z.string().uuid() because:
+ * - z.uuid() is more specific and validates the exact UUID format
+ * - z.string().uuid() allows any string that matches UUID pattern
+ * - z.uuid() provides better type inference and validation
+ * - This is the recommended approach for UUID fields in Zod
+ */
+
 // Base schemas
 export const InvoiceItemSchema = z.object({
   id: z.uuid().optional(),
   invoiceId: z.uuid(),
   itemName: z.string().min(1),
   quantity: z.number().int().positive(),
-  unitPrice: z.string().min(1),
-  totalPrice: z.string().min(1),
+  unitPrice: z.number().positive(),
+  totalPrice: z.number().positive(),
 })
 
 export const InvoiceSchema = z.object({
-  id: z.string().uuid(),
-  orderId: z.string().uuid(),
+  id: z.uuid(),
+  orderId: z.uuid(),
   invoiceNumber: z.string().min(1),
   status: z.enum(['pending', 'generated']).default('pending'),
-  amount: z.string().min(1),
+  amount: z.number().positive(),
   currency: z.string().length(3).default('USD'),
   orderData: z.record(z.string(), z.any()).nullable(),
   createdAt: z.string(),
@@ -42,14 +52,6 @@ export const InvoicesQuerySchema = z.object({
 
 export const UpdateStatusBodySchema = z.object({
   status: z.enum(['pending', 'generated']),
-})
-
-export const TestOrderBodySchema = z.object({
-  orderId: z.string().uuid(),
-  customerId: z.string().min(1),
-  amount: z.number().positive(),
-  currency: z.string().length(3).default('USD'),
-  orderData: z.record(z.string(), z.any()).optional(),
 })
 
 // Response schemas
@@ -86,18 +88,6 @@ export const InvoicesListResponseSchema = z.object({
 
 export const UpdateStatusResponseSchema = InvoiceResponseSchema
 
-export const TestOrderResponseSchema = z.object({
-  id: z.string().uuid(),
-  orderId: z.string().uuid(),
-  invoiceNumber: z.string(),
-  status: z.string(),
-  amount: z.string(),
-  currency: z.string(),
-  orderData: z.record(z.string(), z.any()),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
-
 export const ErrorResponseSchema = z.object({
   error: z.string(),
   message: z.string().optional(),
@@ -114,8 +104,6 @@ export type InvoiceWithItemsResponse = z.infer<
 >
 export type InvoicesListResponse = z.infer<typeof InvoicesListResponseSchema>
 export type UpdateStatusResponse = z.infer<typeof UpdateStatusResponseSchema>
-export type TestOrderResponse = z.infer<typeof TestOrderResponseSchema>
 export type InvoicesQuery = z.infer<typeof InvoicesQuerySchema>
 export type UpdateStatusData = z.infer<typeof UpdateStatusBodySchema>
-export type TestOrderData = z.infer<typeof TestOrderBodySchema>
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>
