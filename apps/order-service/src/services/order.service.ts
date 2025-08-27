@@ -1,126 +1,158 @@
 import { getBrokerClient } from '@streamflix/shared-broker'
-import { eq } from 'drizzle-orm'
-import { db } from '../db/connection.js'
-import { orders, type Order } from '../db/schema.js'
+import { desc, eq, sql } from 'drizzle-orm'
+import { orderItems, orders } from '../db/schema.js'
+import type {
+  CreateOrderData,
+  Order,
+  OrdersListResponse,
+  OrdersQuery,
+  OrderStatsResponse,
+  UpdateOrderStatusData,
+} from '../types/order.js'
 
 export class OrderService {
-  /**
-   * Create a new order (simplified)
-   */
-  async createOrder(orderData: {
-    userId: string
-    subscriptionPlan: string
-    amount: string
-    currency: string
-  }): Promise<Order> {
-    try {
-      console.log('📝 Creating order...')
+  async createOrder(orderData: CreateOrderData): Promise<Order> {
+    const db = await this.getDb()
 
-      // Create order in database
-      const [order] = await db
-        .insert(orders)
-        .values({
-          ...orderData,
-          status: 'pending',
-        })
-        .returning()
-
-      console.log(`✅ Created order: ${order.id}`)
-
-      // Publish event (simplified)
-      const brokerClient = getBrokerClient()
-      await brokerClient.publishOrderCreated({
-        orderId: order.id,
-        userId: order.userId,
-        subscriptionPlan: order.subscriptionPlan,
-        amount: order.amount,
-        currency: order.currency,
-        status: order.status,
+    // Create order
+    const [order] = await db
+      .insert(orders)
+      .values({
+        id: crypto.randomUUID(),
+        userId: orderData.userId,
+        subscriptionPlan: orderData.subscriptionPlan,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        status: 'pending',
+        paymentMethod: orderData.paymentMethod || null,
+        transactionId: null,
+        metadata: orderData.metadata
+          ? JSON.stringify(orderData.metadata)
+          : null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
-      console.log(`📤 Published order.created event for: ${order.id}`)
+      .returning()
 
-      return order
-    } catch (error) {
-      console.error('❌ Error creating order:', error)
-      throw error
+    // Create order items if provided
+    if (orderData.items && orderData.items.length > 0) {
+      const itemsToInsert = orderData.items.map(item => ({
+        id: crypto.randomUUID(),
+        orderId: order.id,
+        itemType: item.itemType,
+        itemId: item.itemId,
+        itemName: item.itemName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.totalPrice,
+        createdAt: new Date(),
+      }))
+
+      await db.insert(orderItems).values(itemsToInsert)
     }
+
+    // Publish event
+    const broker = getBrokerClient()
+    await broker.publishOrderCreated({
+      orderId: order.id,
+      userId: order.userId,
+      subscriptionPlan: order.subscriptionPlan,
+      amount: order.amount,
+      currency: order.currency,
+      status: order.status,
+    })
+
+    return order
   }
 
-  /**
-   * Get order by ID
-   */
   async getOrderById(id: string): Promise<Order | null> {
-    const order = await db.query.orders.findFirst({
-      where: eq(orders.id, id),
-    })
+    const db = await this.getDb()
+    const [order] = await db.select().from(orders).where(eq(orders.id, id))
     return order || null
   }
 
-  /**
-   * Get all orders with pagination and filtering
-   */
-  async getOrders(query?: {
-    page?: number
-    limit?: number
-    status?: string
-    userId?: string
-  }): Promise<{
-    orders: Order[]
-    pagination: {
-      page: number
-      limit: number
-      total: number
-    }
-  }> {
-    const page = query?.page || 1
-    const limit = query?.limit || 20
+  async getOrders(query: OrdersQuery): Promise<OrdersListResponse> {
+    const db = await this.getDb()
+    const { page, limit, userId, status } = query
     const offset = (page - 1) * limit
 
     // Build where conditions
-    const conditions: any[] = []
-    if (query?.status) {
-      conditions.push(eq(orders.status, query.status as any))
-    }
-    if (query?.userId) {
-      conditions.push(eq(orders.userId, query.userId))
-    }
+    const whereConditions = []
+    if (userId) whereConditions.push(eq(orders.userId, userId))
+    if (status) whereConditions.push(eq(orders.status, status))
 
     // Get total count
-    const totalOrders = await db.query.orders.findMany({
-      where: conditions.length > 0 ? conditions[0] : undefined,
-    })
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(whereConditions.length > 0 ? whereConditions : undefined)
 
-    // Get paginated results
-    const paginatedOrders = await db.query.orders.findMany({
-      where: conditions.length > 0 ? conditions[0] : undefined,
-      orderBy: (orders, { desc }) => [desc(orders.createdAt)],
-      limit,
-      offset,
-    })
+    const total = countResult[0]?.count || 0
+
+    // Get orders with pagination
+    const ordersList = await db
+      .select()
+      .from(orders)
+      .where(whereConditions.length > 0 ? whereConditions : undefined)
+      .orderBy(desc(orders.createdAt))
+      .limit(limit)
+      .offset(offset)
 
     return {
-      orders: paginatedOrders,
+      orders: ordersList,
       pagination: {
         page,
         limit,
-        total: totalOrders.length,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     }
   }
 
-  /**
-   * Get order statistics
-   */
-  async getOrderStats(): Promise<{
-    total: number
-    pending: number
-    completed: number
-  }> {
-    const allOrders = await db.query.orders.findMany()
-    return {
-      total: allOrders.length,
-      pending: allOrders.filter(o => o.status === 'pending').length,
-      completed: allOrders.filter(o => o.status === 'completed').length,
+  async updateOrderStatus(
+    id: string,
+    statusData: UpdateOrderStatusData,
+  ): Promise<Order> {
+    const db = await this.getDb()
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        status: statusData.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, id))
+      .returning()
+
+    if (!updatedOrder) {
+      throw new Error('Order not found')
     }
+
+    return updatedOrder
+  }
+
+  async getOrderStats(): Promise<OrderStatsResponse> {
+    const db = await this.getDb()
+
+    const stats = await db
+      .select({
+        totalOrders: sql<number>`count(*)`,
+        pendingOrders: sql<number>`count(*) filter (where status = 'pending')`,
+        completedOrders: sql<number>`count(*) filter (where status = 'completed')`,
+        totalRevenue: sql<string>`coalesce(sum(cast(amount as decimal)), '0')`,
+      })
+      .from(orders)
+
+    return {
+      totalOrders: stats[0]?.totalOrders || 0,
+      pendingOrders: stats[0]?.pendingOrders || 0,
+      completedOrders: stats[0]?.completedOrders || 0,
+      totalRevenue: stats[0]?.totalRevenue || '0',
+    }
+  }
+
+  private async getDb() {
+    // This would return the database connection
+    // For now, we'll assume it's available globally
+    return (globalThis as any).db
   }
 }

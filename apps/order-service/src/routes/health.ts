@@ -1,49 +1,150 @@
 import { getBrokerClient } from '@streamflix/shared-broker'
 import type { FastifyInstance } from 'fastify'
+import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { db } from '../db/connection.js'
+import {
+  DetailedHealthResponse,
+  HealthErrorResponse,
+  HealthResponse,
+  ReadinessResponse,
+} from '../types/health.js'
 
 export async function healthRoutes(fastify: FastifyInstance) {
+  const app = fastify.withTypeProvider<ZodTypeProvider>()
+
   // Basic health check
-  fastify.get('/health', async (request, reply) => {
-    return reply.code(200).send({
-      status: 'healthy',
-      service: 'order-service',
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-    })
-  })
-
-  // Simple detailed health check
-  fastify.get('/health/detailed', async (request, reply) => {
-    try {
-      // Check database
-      await db.execute('SELECT 1')
-      const dbStatus = 'healthy'
-
-      // Check broker
-      const brokerClient = getBrokerClient()
-      const brokerStatus = brokerClient.isConnected()
-        ? 'healthy'
-        : 'disconnected'
-
+  app.get(
+    '/health',
+    {
+      schema: {
+        description: 'Basic health check endpoint',
+        tags: ['health'],
+        summary: 'Basic Health Check',
+        response: {
+          200: HealthResponse,
+        },
+      },
+    },
+    async (_request, reply) => {
       return reply.code(200).send({
         status: 'healthy',
         service: 'order-service',
         timestamp: new Date().toISOString(),
         version: '1.0.0',
-        dependencies: {
-          database: { status: dbStatus },
-          broker: { status: brokerStatus },
+      })
+    },
+  )
+
+  // Detailed health check with dependencies
+  app.get(
+    '/health/detailed',
+    {
+      schema: {
+        description: 'Detailed health check including all dependencies',
+        tags: ['health'],
+        summary: 'Detailed Health Check',
+        response: {
+          200: DetailedHealthResponse,
+          503: HealthErrorResponse,
         },
-      })
-    } catch (error) {
-      return reply.code(503).send({
-        status: 'unhealthy',
-        service: 'order-service',
-        timestamp: new Date().toISOString(),
-        version: '1.0.0',
-        error: 'Service check failed',
-      })
-    }
-  })
+      },
+    },
+    async (_request, reply) => {
+      try {
+        const checks = {
+          database: await checkDatabase(),
+          messagebroker: checkMessageBroker(),
+        }
+
+        const allHealthy = Object.values(checks).every(
+          check => check.status === 'healthy',
+        )
+
+        return reply.code(allHealthy ? 200 : 503).send({
+          status: allHealthy ? 'healthy' : 'unhealthy',
+          service: 'order-service',
+          timestamp: new Date().toISOString(),
+          version: '1.0.0',
+          dependencies: checks,
+        })
+      } catch (error) {
+        return reply.code(503).send({
+          status: 'unhealthy',
+          service: 'order-service',
+          timestamp: new Date().toISOString(),
+          version: '1.0.0',
+          error: 'Service check failed',
+        })
+      }
+    },
+  )
+
+  // Readiness check
+  app.get(
+    '/ready',
+    {
+      schema: {
+        description: 'Readiness check for container orchestration',
+        tags: ['health'],
+        summary: 'Readiness Check',
+        response: {
+          200: ReadinessResponse,
+          503: ReadinessResponse,
+        },
+      },
+    },
+    async (_request, reply) => {
+      try {
+        const dbCheck = await checkDatabase()
+
+        if (dbCheck.status !== 'healthy') {
+          return reply.code(503).send({
+            status: 'not ready',
+            ready: false,
+            error: 'Database connection failed',
+          })
+        }
+
+        return reply.code(200).send({
+          status: 'ready',
+          ready: true,
+        })
+      } catch (error) {
+        return reply.code(503).send({
+          status: 'not ready',
+          ready: false,
+          error: 'Service initialization failed',
+        })
+      }
+    },
+  )
+}
+
+async function checkDatabase(): Promise<{
+  status: 'healthy' | 'unhealthy'
+  responseTime?: number
+}> {
+  const startTime = Date.now()
+  try {
+    await db.execute('SELECT 1')
+    const responseTime = Date.now() - startTime
+    return { status: 'healthy', responseTime }
+  } catch (error) {
+    const responseTime = Date.now() - startTime
+    console.error('Database health check failed:', error)
+    return { status: 'unhealthy', responseTime }
+  }
+}
+
+function checkMessageBroker(): {
+  status: 'healthy' | 'unhealthy'
+  connected: boolean
+} {
+  const brokerClient = getBrokerClient()
+  const isConnected = brokerClient.isConnected()
+  
+  return {
+    status: isConnected ? 'healthy' : 'unhealthy',
+    connected: isConnected,
+  }
 }

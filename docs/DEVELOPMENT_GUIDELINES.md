@@ -70,24 +70,24 @@ export const ProductSchema = z.object({
 
 // ===== API SCHEMAS =====
 const ProductDto = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   name: z.string(),
   description: z.string().nullable(),
   price: z.string(),
   currency: z.string(),
   status: ProductStatusSchema,
-  categoryId: z.string().uuid(),
+  categoryId: z.uuid(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
 
 // ===== PARAMS SCHEMAS =====
 export const ProductIdParams = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
 })
 
 export const CategoryIdParams = z.object({
-  categoryId: z.string().uuid(),
+  categoryId: z.uuid(),
 })
 
 // ===== QUERY SCHEMAS =====
@@ -95,7 +95,7 @@ export const ProductsQuery = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   status: ProductStatusSchema.optional(),
-  categoryId: z.string().uuid().optional(),
+  categoryId: z.uuid().optional(),
   search: z.string().optional(),
 })
 

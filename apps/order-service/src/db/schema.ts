@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm'
 import {
   decimal,
   pgEnum,
@@ -45,6 +46,18 @@ export const orderItems = pgTable('order_items', {
   totalPrice: decimal('total_price', { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+// Relations
+export const ordersRelations = relations(orders, ({ many }) => ({
+  items: many(orderItems),
+}))
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+}))
 
 export type Order = typeof orders.$inferSelect
 export type NewOrder = typeof orders.$inferInsert

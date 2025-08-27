@@ -134,7 +134,21 @@ export function getBrokerClient(): BrokerClient {
 /**
  * Initialize the broker client (call this on application startup)
  */
-export async function initializeBrokerClient(): Promise<void> {
+export async function initializeBrokerClient(
+  config?: Partial<BrokerConfig>,
+): Promise<void> {
+  if (config) {
+    // Create a new instance with custom config
+    brokerClientInstance = new BrokerClient({
+      ...defaultBrokerConfig,
+      ...config,
+      url: config.url || defaultBrokerConfig.url,
+    })
+  } else {
+    // Use default config
+    brokerClientInstance = new BrokerClient()
+  }
+
   const client = getBrokerClient()
   await client.connect()
 }

@@ -2,20 +2,21 @@ import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { OrderService } from '../services/order.service.js'
 import {
-  CreateOrderBody,
-  ErrorResponse,
-  OrderIdParams,
-  OrderResponse,
-  OrdersListResponse,
-  OrdersQuery,
-  OrderStatsResponse,
+  CreateOrderBodySchema,
+  ErrorResponseSchema,
+  OrderIdParamsSchema,
+  OrderResponseSchema,
+  OrdersListResponseSchema,
+  OrdersQuerySchema,
+  OrderStatsResponseSchema,
+  UpdateOrderStatusBodySchema,
 } from '../types/order.js'
 
 export async function orderRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>()
   const orderService = new OrderService()
 
-  // Create a new order
+  // Create order
   app.post(
     '/orders',
     {
@@ -23,18 +24,17 @@ export async function orderRoutes(fastify: FastifyInstance) {
         description: 'Create a new order',
         tags: ['orders'],
         summary: 'Create Order',
-        body: CreateOrderBody,
+        body: CreateOrderBodySchema,
         response: {
-          201: OrderResponse,
-          400: ErrorResponse,
-          500: ErrorResponse,
+          201: OrderResponseSchema,
+          400: ErrorResponseSchema,
+          500: ErrorResponseSchema,
         },
       },
     },
     async (request, reply) => {
       try {
         const orderData = request.body
-
         const order = await orderService.createOrder(orderData)
 
         return reply.code(201).send({
@@ -47,58 +47,13 @@ export async function orderRoutes(fastify: FastifyInstance) {
           paymentMethod: order.paymentMethod,
           transactionId: order.transactionId,
           metadata: order.metadata,
-          createdAt: order.createdAt.toISOString(),
-          updatedAt: order.updatedAt.toISOString(),
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
         })
       } catch (error) {
         console.error('Error creating order:', error)
         return reply.code(500).send({
           error: 'Failed to create order',
-        })
-      }
-    },
-  )
-
-  // List orders with pagination and filtering
-  app.get(
-    '/orders',
-    {
-      schema: {
-        description: 'List orders with pagination and optional filtering',
-        tags: ['orders'],
-        summary: 'List Orders',
-        querystring: OrdersQuery,
-        response: {
-          200: OrdersListResponse,
-          500: ErrorResponse,
-        },
-      },
-    },
-    async (request, reply) => {
-      try {
-        const query = request.query
-        const result = await orderService.getOrders(query)
-
-        return reply.code(200).send({
-          orders: result.orders.map(order => ({
-            id: order.id,
-            userId: order.userId,
-            subscriptionPlan: order.subscriptionPlan,
-            amount: order.amount,
-            currency: order.currency,
-            status: order.status,
-            paymentMethod: order.paymentMethod,
-            transactionId: order.transactionId,
-            metadata: order.metadata,
-            createdAt: order.createdAt.toISOString(),
-            updatedAt: order.updatedAt.toISOString(),
-          })),
-          pagination: result.pagination,
-        })
-      } catch (error) {
-        console.error('Error fetching orders:', error)
-        return reply.code(500).send({
-          error: 'Internal server error',
         })
       }
     },
@@ -112,11 +67,11 @@ export async function orderRoutes(fastify: FastifyInstance) {
         description: 'Get order by ID',
         tags: ['orders'],
         summary: 'Get Order by ID',
-        params: OrderIdParams,
+        params: OrderIdParamsSchema,
         response: {
-          200: OrderResponse,
-          404: ErrorResponse,
-          500: ErrorResponse,
+          200: OrderResponseSchema,
+          404: ErrorResponseSchema,
+          500: ErrorResponseSchema,
         },
       },
     },
@@ -141,11 +96,106 @@ export async function orderRoutes(fastify: FastifyInstance) {
           paymentMethod: order.paymentMethod,
           transactionId: order.transactionId,
           metadata: order.metadata,
-          createdAt: order.createdAt.toISOString(),
-          updatedAt: order.updatedAt.toISOString(),
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
         })
       } catch (error) {
-        console.error('Error fetching order:', error)
+        console.error('Error getting order:', error)
+        return reply.code(500).send({
+          error: 'Internal server error',
+        })
+      }
+    },
+  )
+
+  // Get all orders
+  app.get(
+    '/orders',
+    {
+      schema: {
+        description: 'List orders with pagination and filtering',
+        tags: ['orders'],
+        summary: 'List Orders',
+        querystring: OrdersQuerySchema,
+        response: {
+          200: OrdersListResponseSchema,
+          500: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const query = request.query
+        const result = await orderService.getOrders(query)
+
+        return reply.code(200).send({
+          orders: result.orders.map(order => ({
+            id: order.id,
+            userId: order.userId,
+            subscriptionPlan: order.subscriptionPlan,
+            amount: order.amount,
+            currency: order.currency,
+            status: order.status,
+            paymentMethod: order.paymentMethod,
+            transactionId: order.transactionId,
+            metadata: order.metadata,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+          })),
+          pagination: result.pagination,
+        })
+      } catch (error) {
+        console.error('Error listing orders:', error)
+        return reply.code(500).send({
+          error: 'Internal server error',
+        })
+      }
+    },
+  )
+
+  // Update order status
+  app.patch(
+    '/orders/:id/status',
+    {
+      schema: {
+        description: 'Update order status',
+        tags: ['orders'],
+        summary: 'Update Order Status',
+        body: UpdateOrderStatusBodySchema,
+        params: OrderIdParamsSchema,
+        response: {
+          200: OrderResponseSchema,
+          404: ErrorResponseSchema,
+          500: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        const { id } = request.params
+        const statusData = request.body
+        const order = await orderService.updateOrderStatus(id, statusData)
+
+        return reply.code(200).send({
+          id: order.id,
+          userId: order.userId,
+          subscriptionPlan: order.subscriptionPlan,
+          amount: order.amount,
+          currency: order.currency,
+          status: order.status,
+          paymentMethod: order.paymentMethod,
+          transactionId: order.transactionId,
+          metadata: order.metadata,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+        })
+      } catch (error) {
+        console.error('Error updating order status:', error)
+        if (error instanceof Error && error.message === 'Order not found') {
+          return reply.code(404).send({
+            error: 'Order not found',
+          })
+        }
         return reply.code(500).send({
           error: 'Internal server error',
         })
@@ -158,21 +208,21 @@ export async function orderRoutes(fastify: FastifyInstance) {
     '/orders/stats',
     {
       schema: {
-        description: 'Get order statistics and counts',
+        description: 'Get order statistics',
         tags: ['orders'],
         summary: 'Get Order Statistics',
         response: {
-          200: OrderStatsResponse,
-          500: ErrorResponse,
+          200: OrderStatsResponseSchema,
+          500: ErrorResponseSchema,
         },
       },
     },
-    async (_request, reply) => {
+    async (request, reply) => {
       try {
         const stats = await orderService.getOrderStats()
         return reply.code(200).send(stats)
       } catch (error) {
-        console.error('Error fetching stats:', error)
+        console.error('Error getting order stats:', error)
         return reply.code(500).send({
           error: 'Internal server error',
         })

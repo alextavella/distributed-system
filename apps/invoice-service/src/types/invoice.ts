@@ -1,143 +1,121 @@
 import { z } from 'zod'
 
-// ===== BASE SCHEMAS =====
-export const InvoiceStatusSchema = z.enum([
-  'pending',
-  'processing',
-  'generated',
-  'failed',
-  'sent',
-])
+// Base schemas
+export const InvoiceItemSchema = z.object({
+  id: z.uuid().optional(),
+  invoiceId: z.uuid(),
+  itemName: z.string().min(1),
+  quantity: z.number().int().positive(),
+  unitPrice: z.string().min(1),
+  totalPrice: z.string().min(1),
+})
 
 export const InvoiceSchema = z.object({
-  id: z.uuid(),
-  orderId: z.uuid(),
-  invoiceNumber: z.string().min(1).max(50),
-  status: InvoiceStatusSchema,
-  amount: z.string().regex(/^\d+\.\d{2}$/),
-  currency: z.string().length(3),
-  orderData: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  generatedAt: z.date().nullable(),
-  sentAt: z.date().nullable(),
-})
-
-export const InvoiceItemSchema = z.object({
-  id: z.uuid(),
-  invoiceId: z.uuid(),
-  itemType: z.string().min(1).max(50),
-  itemId: z.string().min(1).max(100),
-  itemName: z.string().min(1).max(200),
-  quantity: z.number().int().positive(),
-  unitPrice: z.string().regex(/^\d+\.\d{2}$/),
-  totalPrice: z.string().regex(/^\d+\.\d{2}$/),
-})
-
-// ===== API SCHEMAS =====
-const InvoiceDto = z.object({
-  id: z.uuid(),
-  orderId: z.uuid(),
-  invoiceNumber: z.string(),
-  status: InvoiceStatusSchema,
-  amount: z.string(),
-  currency: z.string(),
-  orderData: z.string().nullable(),
+  id: z.string().uuid(),
+  orderId: z.string().uuid(),
+  invoiceNumber: z.string().min(1),
+  status: z.enum(['pending', 'generated']).default('pending'),
+  amount: z.string().min(1),
+  currency: z.string().length(3).default('USD'),
+  orderData: z.record(z.string(), z.any()).nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
   generatedAt: z.string().nullable(),
-  sentAt: z.string().nullable(),
-  items: z.array(z.any()).default([]),
+  items: z.array(InvoiceItemSchema).optional(),
 })
 
-// Params
-export const InvoiceIdParams = z.object({
+// Request/Response schemas
+export const InvoiceIdParamsSchema = z.object({
   id: z.uuid(),
 })
 
-export const OrderIdParams = z.object({
+export const OrderIdParamsSchema = z.object({
   orderId: z.uuid(),
 })
 
-// Query
-export const InvoicesQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  status: InvoiceStatusSchema.optional(),
+export const InvoicesQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(10),
+  status: z.enum(['pending', 'generated']).optional(),
   orderId: z.uuid().optional(),
 })
 
-// Body
-export const UpdateStatusBody = z.object({
-  status: InvoiceStatusSchema,
+export const UpdateStatusBodySchema = z.object({
+  status: z.enum(['pending', 'generated']),
 })
 
-export const TestOrderBody = z.object({
-  orderId: z.uuid(),
-  userId: z.uuid(),
-  subscriptionPlan: z.string().min(1).default('premium'),
-  amount: z.string().regex(/^\d+\.\d{2}$/),
-  currency: z.string().length(3),
-  status: z.string().default('pending'),
+export const TestOrderBodySchema = z.object({
+  orderId: z.string().uuid(),
+  customerId: z.string().min(1),
+  amount: z.number().positive(),
+  currency: z.string().length(3).default('USD'),
+  orderData: z.record(z.string(), z.any()).optional(),
 })
 
-// Export individual schemas for route usage
-export {
-  TestOrderBody as ProcessTestOrderBody,
-  UpdateStatusBody as UpdateInvoiceStatusBody,
-}
+// Response schemas
+export const InvoiceResponseSchema = InvoiceSchema.omit({
+  items: true,
+  createdAt: true,
+  updatedAt: true,
+  generatedAt: true,
+}).extend({
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  generatedAt: z.string().nullable(),
+})
 
-// Response
-export const InvoiceResponse = InvoiceDto
+export const InvoiceWithItemsResponseSchema = InvoiceSchema.omit({
+  createdAt: true,
+  updatedAt: true,
+  generatedAt: true,
+}).extend({
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  generatedAt: z.string().nullable(),
+})
 
-export const InvoicesListResponse = z.object({
-  invoices: z.array(InvoiceDto),
+export const InvoicesListResponseSchema = z.object({
+  invoices: z.array(InvoiceResponseSchema),
   pagination: z.object({
     page: z.number(),
     limit: z.number(),
     total: z.number(),
+    totalPages: z.number(),
   }),
 })
 
-export const InvoiceStatsResponse = z.object({
-  total: z.number(),
-  pending: z.number().optional(),
-  generated: z.number().optional(),
-})
+export const UpdateStatusResponseSchema = InvoiceResponseSchema
 
-export const UpdateStatusResponse = z.object({
-  id: z.uuid(),
-  orderId: z.uuid(),
+export const TestOrderResponseSchema = z.object({
+  id: z.string().uuid(),
+  orderId: z.string().uuid(),
   invoiceNumber: z.string(),
-  status: InvoiceStatusSchema,
+  status: z.string(),
   amount: z.string(),
   currency: z.string(),
-  orderData: z.string().nullable(),
+  orderData: z.record(z.string(), z.any()),
   createdAt: z.string(),
   updatedAt: z.string(),
-  generatedAt: z.string().nullable(),
-  sentAt: z.string().nullable(),
-  message: z.string(),
 })
 
-export const TestOrderResponse = z.object({
-  orderId: z.uuid(),
-  processedAt: z.string(),
-  message: z.string(),
-})
-
-// Export individual schemas for route usage
-export {
-  TestOrderResponse as ProcessTestOrderResponse,
-  UpdateStatusResponse as UpdateInvoiceStatusResponse,
-}
-
-export const ErrorResponse = z.object({
+export const ErrorResponseSchema = z.object({
   error: z.string(),
-  code: z.string().optional(),
+  message: z.string().optional(),
+  statusCode: z.number().optional(),
+  details: z.any().optional(),
 })
 
-// ===== TYPES =====
-export type InvoiceStatus = z.infer<typeof InvoiceStatusSchema>
+// TypeScript types
 export type Invoice = z.infer<typeof InvoiceSchema>
 export type InvoiceItem = z.infer<typeof InvoiceItemSchema>
+export type InvoiceResponse = z.infer<typeof InvoiceResponseSchema>
+export type InvoiceWithItemsResponse = z.infer<
+  typeof InvoiceWithItemsResponseSchema
+>
+export type InvoicesListResponse = z.infer<typeof InvoicesListResponseSchema>
+export type UpdateStatusResponse = z.infer<typeof UpdateStatusResponseSchema>
+export type TestOrderResponse = z.infer<typeof TestOrderResponseSchema>
+export type InvoicesQuery = z.infer<typeof InvoicesQuerySchema>
+export type UpdateStatusData = z.infer<typeof UpdateStatusBodySchema>
+export type TestOrderData = z.infer<typeof TestOrderBodySchema>
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>

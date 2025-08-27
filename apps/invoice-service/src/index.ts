@@ -5,6 +5,7 @@ import swaggerUI from '@fastify/swagger-ui'
 import { initializeBrokerClient, shutdownBrokerClient } from '@streamflix/shared-broker'
 import 'dotenv/config'
 import Fastify from 'fastify'
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
 import { healthRoutes } from './routes/health.js'
 import { invoiceRoutes } from './routes/invoices.js'
 import { invoiceEventConsumer } from './services/invoice-event-consumer.js'
@@ -18,6 +19,10 @@ const fastify = Fastify({
 
 // Setup function
 async function setupFastify() {
+  // Add schema validator and serializer
+  fastify.setValidatorCompiler(validatorCompiler)
+  fastify.setSerializerCompiler(serializerCompiler)
+
   // Register CORS
   await fastify.register(cors, {
     origin: true,

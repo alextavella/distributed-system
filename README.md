@@ -49,6 +49,7 @@ streamflix-microservices/
 ### 🚀 **Guias de Desenvolvimento**
 - [**Development Guidelines**](./docs/DEVELOPMENT_GUIDELINES.md) - Guia completo para criar novas features
 - [**Code Standards**](./docs/CODE_STANDARDS.md) - Padrões de código obrigatórios
+- [**Testing Guide**](./docs/TESTING.md) - Como executar e trabalhar com testes
 - [**Database Migrations**](./docs/architecture/DATABASE_MIGRATIONS.md) - Boas práticas para migrations
 
 ### Arquitetura
@@ -170,7 +171,12 @@ pnpm db:studio:invoice
 - `pnpm lint` - Executar linting em todos os serviços
 - `pnpm lint:fix` - Corrigir problemas de linting
 - `pnpm type-check` - Verificar tipos TypeScript
-- `pnpm test` - Executar testes
+
+### Testes
+- `pnpm test:integration` - Executar testes de integração
+- `pnpm test:integration:watch` - Testes em modo watch
+- `pnpm test:integration:ui` - Interface visual dos testes
+- `./scripts/test-integration.sh` - Script de conveniência para testes
 
 ### Docker
 - `pnpm docker:build` - Build das imagens
@@ -350,6 +356,47 @@ docker-compose build
 # Deploy
 docker-compose -f docker-compose.prod.yml up -d
 ```
+
+## 🧪 Testes
+
+O projeto inclui uma suíte completa de testes de integração que valida o funcionamento dos serviços em cenários reais.
+
+### Executar Testes
+
+```bash
+# Teste básico (recomendado para início)
+pnpm run test:integration tests/integration/basic-containers.test.ts
+
+# Todos os testes de integração
+pnpm run test:integration
+
+# Modo desenvolvimento (watch)
+pnpm run test:integration:watch
+
+# Interface visual
+pnpm run test:integration:ui
+
+# Script de conveniência
+./scripts/test-integration.sh --help
+```
+
+### O que é Testado
+
+- ✅ **Infraestrutura**: Containers PostgreSQL e RabbitMQ
+- ✅ **APIs**: Criação, busca e atualização de pedidos/faturas  
+- ✅ **Persistência**: Dados salvos corretamente no banco
+- ✅ **Mensageria**: Eventos publicados e consumidos via RabbitMQ
+- ✅ **Integração**: Fluxo completo order-service → invoice-service
+- ✅ **Paginação**: Filtros e paginação de resultados
+- ✅ **Validação**: Schemas Zod e tipos TypeScript
+
+### Pré-requisitos para Testes
+
+- Docker Desktop rodando
+- Node.js 22+ e pnpm 8+
+- Dependências instaladas (`pnpm install`)
+
+> 📖 **Documentação completa**: [`docs/TESTING.md`](docs/TESTING.md)
 
 ## 📖 Próximos Passos
 

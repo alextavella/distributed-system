@@ -48,7 +48,7 @@ export const EntitySchema = z.object({ /* ... */ })
 
 // 2. Params schemas
 export const EntityIdParams = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
 })
 
 // 3. Query schemas  

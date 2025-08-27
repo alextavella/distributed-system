@@ -4,15 +4,9 @@ import type {
   OrderCreatedEvent,
 } from '@streamflix/shared-broker'
 import { getBrokerClient } from '@streamflix/shared-broker'
-import { InvoiceService } from './invoice.service.js'
 
 export class InvoiceEventConsumer {
-  private readonly invoiceService: InvoiceService
   private isConsuming = false
-
-  constructor() {
-    this.invoiceService = new InvoiceService()
-  }
 
   /**
    * Start consuming real RabbitMQ events
@@ -87,7 +81,9 @@ export class InvoiceEventConsumer {
       console.log(`💰 Amount: ${event.data.amount} ${event.data.currency}`)
       console.log(`🔗 Routing Key: ${metadata.routingKey}`)
 
-      await this.invoiceService.processOrderEvent(event)
+      // For now, just log the event
+      // TODO: Implement invoice generation logic
+      console.log('📝 Invoice generation logic to be implemented')
 
       const processingTime = Date.now() - startTime
       console.log(
@@ -139,35 +135,6 @@ export class InvoiceEventConsumer {
    */
   getStatus(): { isConsuming: boolean } {
     return { isConsuming: this.isConsuming }
-  }
-
-  /**
-   * Process test order event (for manual testing)
-   */
-  async processTestOrderEvent(orderData: {
-    orderId: string
-    userId: string
-    amount: string
-    currency: string
-    status: string
-  }): Promise<void> {
-    const mockEvent: OrderCreatedEvent = {
-      eventId: `test-${Date.now()}`,
-      eventType: 'order.created',
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-      data: {
-        orderId: orderData.orderId,
-        userId: orderData.userId,
-        subscriptionPlan: 'premium',
-        amount: orderData.amount,
-        currency: orderData.currency,
-        status: orderData.status,
-      },
-    }
-
-    console.log(`🧪 Processing test order: ${orderData.orderId}`)
-    await this.invoiceService.processOrderEvent(mockEvent)
   }
 }
 
