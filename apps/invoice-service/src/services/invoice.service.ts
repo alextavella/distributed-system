@@ -1,6 +1,11 @@
 import { getBrokerClient } from '@streamflix/shared-broker'
 import { desc, eq, sql } from 'drizzle-orm'
-import { invoiceItems, invoices } from '../db/schema.js'
+import { db } from '../db/connection.js'
+import {
+  invoiceItems,
+  invoices,
+  type Invoice as DrizzleInvoice,
+} from '../db/schema.js'
 import type {
   Invoice,
   InvoicesListResponse,
@@ -12,7 +17,7 @@ import type {
 interface CreateInvoiceData {
   orderId: string
   userId: string
-  amount: string
+  amount: number
   currency: string
   dueDate: Date
   metadata?: Record<string, any> | undefined
@@ -22,14 +27,15 @@ interface CreateInvoiceData {
     itemName: string
     description?: string
     quantity: number
-    unitPrice: string
-    totalPrice: string
+    unitPrice: number
+    totalPrice: number
   }>
 }
 
 export class InvoiceService {
   async createInvoice(invoiceData: CreateInvoiceData): Promise<Invoice> {
-    const db = await this.getDb()
+    // Ensure amount is always a string
+    const amountString = invoiceData.amount.toString()
 
     // Create invoice
     const [invoice] = await db
@@ -39,7 +45,7 @@ export class InvoiceService {
         orderId: invoiceData.orderId,
         invoiceNumber: `INV-${Date.now()}`,
         status: 'pending',
-        amount: invoiceData.amount,
+        amount: amountString,
         currency: invoiceData.currency,
         orderData: invoiceData.metadata
           ? JSON.stringify(invoiceData.metadata)
@@ -50,6 +56,10 @@ export class InvoiceService {
       })
       .returning()
 
+    if (!invoice) {
+      throw new Error('Failed to create invoice')
+    }
+
     // Create invoice items if provided
     if (invoiceData.items && invoiceData.items.length > 0) {
       const itemsToInsert = invoiceData.items.map(item => ({
@@ -57,8 +67,8 @@ export class InvoiceService {
         invoiceId: invoice.id,
         itemName: item.itemName,
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        totalPrice: item.totalPrice,
+        unitPrice: item.unitPrice.toString(), // Convert to string for decimal field
+        totalPrice: item.totalPrice.toString(), // Convert to string for decimal field
       }))
 
       await db.insert(invoiceItems).values(itemsToInsert)
@@ -74,54 +84,85 @@ export class InvoiceService {
       orderId: invoice.orderId,
       userId: invoiceData.userId,
       subscriptionPlan: 'invoice',
-      amount: invoiceData.amount,
+      amount: amountString,
       currency: invoiceData.currency,
       status: invoice.status,
     })
 
     await eventDispatcher.dispatch(event)
 
-    return invoice
+    // Convert Drizzle Invoice to Zod Invoice type
+    return this.convertDrizzleInvoiceToZodInvoice(invoice)
+  }
+
+  private convertDrizzleInvoiceToZodInvoice(
+    drizzleInvoice: DrizzleInvoice,
+  ): Invoice {
+    return {
+      id: drizzleInvoice.id,
+      orderId: drizzleInvoice.orderId,
+      invoiceNumber: drizzleInvoice.invoiceNumber,
+      status: drizzleInvoice.status as 'pending' | 'generated',
+      amount: Number(drizzleInvoice.amount), // Convert decimal to number
+      currency: drizzleInvoice.currency,
+      orderData: drizzleInvoice.orderData as Record<string, any> | null,
+      createdAt: drizzleInvoice.createdAt.toISOString(),
+      updatedAt: drizzleInvoice.updatedAt.toISOString(),
+      generatedAt: drizzleInvoice.generatedAt?.toISOString() || null,
+    }
   }
 
   async getInvoiceById(id: string): Promise<Invoice | null> {
-    const db = await this.getDb()
     const [invoice] = await db
       .select()
       .from(invoices)
       .where(eq(invoices.id, id))
-    return invoice || null
+
+    if (!invoice) return null
+
+    // Convert Drizzle Invoice to Zod Invoice type
+    return this.convertDrizzleInvoiceToZodInvoice(invoice)
   }
 
   async getInvoices(query: InvoicesQuery): Promise<InvoicesListResponse> {
-    const db = await this.getDb()
     const { page, limit, status, orderId } = query
     const offset = (page - 1) * limit
 
-    // Build where conditions
-    const whereConditions = []
-    if (status) whereConditions.push(eq(invoices.status, status))
-    if (orderId) whereConditions.push(eq(invoices.orderId, orderId))
+    // Build where condition
+    let whereCondition = undefined
+    if (status && orderId) {
+      whereCondition =
+        eq(invoices.status, status) && eq(invoices.orderId, orderId)
+    } else if (status) {
+      whereCondition = eq(invoices.status, status)
+    } else if (orderId) {
+      whereCondition = eq(invoices.orderId, orderId)
+    }
 
     // Get total count
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(invoices)
-      .where(whereConditions.length > 0 ? whereConditions : undefined)
+      .where(whereCondition)
 
-    const total = countResult[0]?.count || 0
+    const total = Number(countResult[0]?.count || 0)
 
     // Get invoices with pagination
     const invoicesList = await db
       .select()
       .from(invoices)
-      .where(whereConditions.length > 0 ? whereConditions : undefined)
+      .where(whereCondition)
       .orderBy(desc(invoices.createdAt))
       .limit(limit)
       .offset(offset)
 
+    // Convert Drizzle Invoices to Zod Invoice types
+    const formattedInvoices = invoicesList.map(invoice =>
+      this.convertDrizzleInvoiceToZodInvoice(invoice),
+    )
+
     return {
-      invoices: invoicesList,
+      invoices: formattedInvoices,
       pagination: {
         page,
         limit,
@@ -135,8 +176,6 @@ export class InvoiceService {
     id: string,
     statusData: UpdateStatusData,
   ): Promise<Invoice> {
-    const db = await this.getDb()
-
     const [invoice] = await db
       .update(invoices)
       .set({
@@ -151,12 +190,7 @@ export class InvoiceService {
       throw new Error('Invoice not found')
     }
 
-    return invoice
-  }
-
-  private async getDb() {
-    // This would typically return a database connection
-    // For now, we'll assume it's available
-    return {} as any
+    // Convert Drizzle Invoice to Zod Invoice type
+    return this.convertDrizzleInvoiceToZodInvoice(invoice)
   }
 }
