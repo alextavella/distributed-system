@@ -23,9 +23,9 @@ POST {{baseUrl}}/api/orders
 Content-Type: {{contentType}}
 
 {
-  "userId": "550e8400-e29b-41d4-a716-446655440001",
+  "userId": "550e8400-e29b-41d4-a716-446655440011",
   "subscriptionPlan": "premium",
-  "amount": "29.99",
+  "amount": 29.99,
   "currency": "USD"
 }
 
@@ -36,7 +36,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440002",
   "subscriptionPlan": "basic",
-  "amount": "19.99",
+  "amount": 19.99,
   "currency": "USD"
 }
 
@@ -47,7 +47,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440003",
   "subscriptionPlan": "enterprise",
-  "amount": "99.99",
+  "amount": 99.99,
   "currency": "EUR"
 }
 
@@ -58,7 +58,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440005",
   "subscriptionPlan": "enterprise",
-  "amount": "999.99",
+  "amount": 999.99,
   "currency": "USD"
 }
 
@@ -69,7 +69,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440006",
   "subscriptionPlan": "premium",
-  "amount": "49.99",
+  "amount": 49.99,
   "currency": "USD",
   "paymentMethod": "credit_card"
 }
@@ -81,7 +81,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440007",
   "subscriptionPlan": "basic",
-  "amount": "24.99",
+  "amount": 24.99,
   "currency": "USD",
   "metadata": {
     "source": "web",
@@ -97,16 +97,16 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440008",
   "subscriptionPlan": "premium",
-  "amount": "79.99",
+  "amount": 79.99,
   "currency": "USD",
   "items": [
     {
       "itemType": "subscription",
       "itemId": "sub-premium-monthly",
       "itemName": "Premium Monthly Subscription",
-      "quantity": "1",
-      "unitPrice": "79.99",
-      "totalPrice": "79.99"
+      "quantity": 1,
+      "unitPrice": 79.99,
+      "totalPrice": 79.99
     }
   ]
 }
@@ -122,7 +122,7 @@ Content-Type: {{contentType}}
 {
   "userId": "invalid-uuid",
   "subscriptionPlan": "premium",
-  "amount": "29.99",
+  "amount": 29.99,
   "currency": "USD"
 }
 
@@ -141,7 +141,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440010",
   "subscriptionPlan": "premium",
-  "amount": "29.99",
+  "amount": 29.99,
   "currency": "INVALID"
 }
 
@@ -152,7 +152,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440011",
   "subscriptionPlan": "premium",
-  "amount": "-29.99",
+  "amount": -29.99,
   "currency": "USD"
 }
 
@@ -174,7 +174,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440013",
   "subscriptionPlan": "premium",
-  "amount": "0",
+  "amount": 0,
   "currency": "USD"
 }
 
@@ -228,7 +228,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440014",
   "subscriptionPlan": "super-premium-enterprise-business-corporate-plan-with-all-features",
-  "amount": "199.99",
+  "amount": 199.99,
   "currency": "USD"
 }
 
@@ -239,7 +239,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440015",
   "subscriptionPlan": "premium",
-  "amount": "29.999999",
+  "amount": 29.999999,
   "currency": "USD"
 }
 
@@ -250,7 +250,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440016",
   "subscriptionPlan": "basic",
-  "amount": "15.99",
+  "amount": 15.99,
   "currency": "GBP"
 }
 
@@ -261,7 +261,7 @@ Content-Type: {{contentType}}
 {
   "userId": "550e8400-e29b-41d4-a716-446655440017",
   "subscriptionPlan": "enterprise",
-  "amount": "149.99",
+  "amount": 149.99,
   "currency": "USD",
   "metadata": {
     "source": "mobile_app",

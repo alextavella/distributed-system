@@ -1,0 +1,162 @@
+@baseUrl = http://localhost:3001
+@invoiceBaseUrl = http://localhost:3002
+@contentType = application/json
+
+### ========================================
+### INVOICE SERVICE INTEGRATION TESTS
+### ========================================
+### This file tests the complete flow:
+### 1. Create an order in Order Service
+### 2. Verify invoice is automatically created in Invoice Service
+### 3. Check invoice details and status
+
+### ========================================
+### STEP 1: CREATE ORDER (triggers invoice creation)
+### ========================================
+
+### Create Premium Order - Should trigger invoice creation
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440021",
+  "subscriptionPlan": "premium",
+  "amount": 29.99,
+  "currency": "USD",
+  "metadata": {
+    "source": "integration_test",
+    "test_type": "invoice_creation"
+  }
+}
+
+### ========================================
+### STEP 2: VERIFY INVOICE CREATION
+### ========================================
+
+### Get All Invoices (check if new invoice was created)
+# @name getInvoices
+GET {{invoiceBaseUrl}}/api/invoices
+###
+@orderId = {{getInvoices.response.body.invoices[0].orderId}}
+
+### Get Invoice by Order ID (use order ID from step 1)
+GET {{invoiceBaseUrl}}/api/invoices?orderId={{orderId}}
+
+### ========================================
+### STEP 3: CREATE ANOTHER ORDER FOR TESTING
+### ========================================
+
+### Create Enterprise Order - Higher amount
+# @name createEnterpriseOrder
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440021",
+  "subscriptionPlan": "enterprise",
+  "amount": 99.99,
+  "currency": "USD",
+  "metadata": {
+    "source": "integration_test",
+    "test_type": "enterprise_invoice"
+  }
+}
+###
+@enterpriseOrderId = {{createEnterpriseOrder.response.body.orderId}}
+
+### ========================================
+### STEP 4: VERIFY ENTERPRISE INVOICE
+### ========================================
+
+### Get Invoice for Enterprise Order
+GET {{invoiceBaseUrl}}/api/invoices?orderId={{enterpriseOrderId}}
+
+### ========================================
+### STEP 5: TEST INVOICE STATUS UPDATES
+### ========================================
+
+### Update Invoice Status to Generated (use invoice ID from previous responses)
+PATCH {{invoiceBaseUrl}}/api/invoices/INVOICE_ID_HERE/status
+Content-Type: {{contentType}}
+
+{
+  "status": "generated"
+}
+
+### ========================================
+### STEP 6: TEST INVOICE ITEMS
+### ========================================
+
+### Create Order with Items - Should create invoice with items
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440022",
+  "subscriptionPlan": "basic",
+  "amount": 19.99,
+  "currency": "USD",
+  "items": [
+    {
+      "itemType": "subscription",
+      "itemId": "sub-basic-monthly",
+      "itemName": "Basic Monthly Subscription",
+      "quantity": 1,
+      "unitPrice": 19.99,
+      "totalPrice": 19.99
+    }
+  ],
+  "metadata": {
+    "source": "integration_test",
+    "test_type": "invoice_with_items"
+  }
+}
+
+### Get Invoice Items for Order with Items
+GET {{invoiceBaseUrl}}/api/invoices?orderId=550e8400-e29b-41d4-a716-446655440022
+
+### ========================================
+### STEP 7: ERROR SCENARIOS
+### ========================================
+
+### Try to create invoice with invalid order ID
+POST {{invoiceBaseUrl}}/api/invoices
+Content-Type: {{contentType}}
+
+{
+  "orderId": "invalid-order-id",
+  "userId": "550e8400-e29b-41d4-a716-446655440023",
+  "amount": 29.99,
+  "currency": "USD"
+}
+
+### Try to update non-existent invoice status
+PATCH {{invoiceBaseUrl}}/api/invoices/non-existent-id/status
+Content-Type: {{contentType}}
+
+{
+  "status": "generated"
+}
+
+### ========================================
+### STEP 8: VERIFY ALL INVOICES
+### ========================================
+
+### Get All Invoices with Pagination
+GET {{invoiceBaseUrl}}/api/invoices?page=1&limit=10
+
+### Get Invoice Statistics
+GET {{invoiceBaseUrl}}/api/invoices/stats
+
+### ========================================
+### STEP 9: CLEANUP VERIFICATION
+### ========================================
+
+### Health Check - Order Service
+GET {{baseUrl}}/health
+
+### Health Check - Invoice Service
+GET {{invoiceBaseUrl}}/health
+
+### Detailed Health Check - Invoice Service
+GET {{invoiceBaseUrl}}/health/detailed
