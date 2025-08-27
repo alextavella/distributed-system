@@ -2,10 +2,16 @@ import cors from '@fastify/cors'
 import helmet from '@fastify/helmet'
 import swagger from '@fastify/swagger'
 import swaggerUI from '@fastify/swagger-ui'
-import { initializeBrokerClient, shutdownBrokerClient } from '@streamflix/shared-broker'
+import {
+  initializeBrokerClient,
+  shutdownBrokerClient,
+} from '@streamflix/shared-broker'
 import 'dotenv/config'
 import Fastify from 'fastify'
-import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod'
+import {
+  serializerCompiler,
+  validatorCompiler,
+} from 'fastify-type-provider-zod'
 import { healthRoutes } from './routes/health.js'
 import { orderRoutes } from './routes/orders.js'
 
@@ -104,7 +110,9 @@ const start = async () => {
 
     // Initialize broker client
     console.log('🔌 Initializing broker...')
-    await initializeBrokerClient()
+    await initializeBrokerClient({
+      url: process.env.RABBITMQ_URL || 'amqp://admin:admin@localhost:5672',
+    })
 
     // Start server
     const host = process.env.HOST || '0.0.0.0'

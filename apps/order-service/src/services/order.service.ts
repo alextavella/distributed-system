@@ -1,5 +1,6 @@
 import { getBrokerClient } from '@streamflix/shared-broker'
 import { desc, eq, sql } from 'drizzle-orm'
+import { db } from '../db/connection.js'
 import { orderItems, orders } from '../db/schema.js'
 import type {
   CreateOrderData,
@@ -12,8 +13,6 @@ import type {
 
 export class OrderService {
   async createOrder(orderData: CreateOrderData): Promise<Order> {
-    const db = await this.getDb()
-
     // Create order
     const [order] = await db
       .insert(orders)
@@ -66,34 +65,37 @@ export class OrderService {
   }
 
   async getOrderById(id: string): Promise<Order | null> {
-    const db = await this.getDb()
     const [order] = await db.select().from(orders).where(eq(orders.id, id))
     return order || null
   }
 
   async getOrders(query: OrdersQuery): Promise<OrdersListResponse> {
-    const db = await this.getDb()
     const { page, limit, userId, status } = query
     const offset = (page - 1) * limit
 
     // Build where conditions
-    const whereConditions = []
-    if (userId) whereConditions.push(eq(orders.userId, userId))
-    if (status) whereConditions.push(eq(orders.status, status))
+    let whereCondition = undefined
+    if (userId && status) {
+      whereCondition = eq(orders.userId, userId) && eq(orders.status, status)
+    } else if (userId) {
+      whereCondition = eq(orders.userId, userId)
+    } else if (status) {
+      whereCondition = eq(orders.status, status)
+    }
 
     // Get total count
     const countResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(orders)
-      .where(whereConditions.length > 0 ? whereConditions : undefined)
+      .where(whereCondition)
 
-    const total = countResult[0]?.count || 0
+    const total = Number(countResult[0]?.count || 0)
 
     // Get orders with pagination
     const ordersList = await db
       .select()
       .from(orders)
-      .where(whereConditions.length > 0 ? whereConditions : undefined)
+      .where(whereCondition)
       .orderBy(desc(orders.createdAt))
       .limit(limit)
       .offset(offset)
@@ -113,7 +115,6 @@ export class OrderService {
     id: string,
     statusData: UpdateOrderStatusData,
   ): Promise<Order> {
-    const db = await this.getDb()
     const [updatedOrder] = await db
       .update(orders)
       .set({
@@ -131,8 +132,6 @@ export class OrderService {
   }
 
   async getOrderStats(): Promise<OrderStatsResponse> {
-    const db = await this.getDb()
-
     const stats = await db
       .select({
         totalOrders: sql<number>`count(*)`,
@@ -143,16 +142,10 @@ export class OrderService {
       .from(orders)
 
     return {
-      totalOrders: stats[0]?.totalOrders || 0,
-      pendingOrders: stats[0]?.pendingOrders || 0,
-      completedOrders: stats[0]?.completedOrders || 0,
+      totalOrders: Number(stats[0]?.totalOrders || 0),
+      pendingOrders: Number(stats[0]?.pendingOrders || 0),
+      completedOrders: Number(stats[0]?.completedOrders || 0),
       totalRevenue: stats[0]?.totalRevenue || '0',
     }
-  }
-
-  private async getDb() {
-    // This would return the database connection
-    // For now, we'll assume it's available globally
-    return (globalThis as any).db
   }
 }
