@@ -28,6 +28,8 @@ RUN pnpm run build
 WORKDIR /workspace/apps/order-service
 RUN pnpm run build
 
+
+
 # Production stage
 FROM node:22-alpine AS production
 
@@ -55,9 +57,11 @@ COPY --from=builder /workspace/apps/order-service/dist ./apps/order-service/dist
 COPY --from=builder /workspace/apps/order-service/drizzle ./apps/order-service/drizzle
 COPY --from=builder /workspace/apps/order-service/drizzle.config.ts ./apps/order-service/
 
+
+
 # Install only production dependencies
 WORKDIR /app/apps/order-service
-RUN pnpm install --no-frozen-lockfile --prod
+RUN HUSKY=0 pnpm install --no-frozen-lockfile --prod --ignore-scripts
 
 # Change ownership
 RUN chown -R nextjs:nodejs /app

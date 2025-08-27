@@ -28,6 +28,8 @@ RUN pnpm run build
 WORKDIR /workspace/apps/invoice-service
 RUN pnpm run build
 
+
+
 # Production stage
 FROM node:22-alpine AS production
 
@@ -55,9 +57,11 @@ COPY --from=builder /workspace/apps/invoice-service/dist ./apps/invoice-service/
 COPY --from=builder /workspace/apps/invoice-service/drizzle ./apps/invoice-service/drizzle
 COPY --from=builder /workspace/apps/invoice-service/drizzle.config.ts ./apps/invoice-service/
 
+
+
 # Install only production dependencies
 WORKDIR /app/apps/invoice-service
-RUN pnpm install --no-frozen-lockfile --prod
+RUN HUSKY=0 pnpm install --no-frozen-lockfile --prod --ignore-scripts
 
 # Change ownership
 RUN chown -R nextjs:nodejs /app
