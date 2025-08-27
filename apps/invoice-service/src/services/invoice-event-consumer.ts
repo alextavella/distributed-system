@@ -4,9 +4,15 @@ import type {
   OrderCreatedEvent,
 } from '@streamflix/shared-broker'
 import { getBrokerClient } from '@streamflix/shared-broker'
+import { InvoiceService } from './invoice.service.js'
 
 export class InvoiceEventConsumer {
   private isConsuming = false
+  private invoiceService: InvoiceService
+
+  constructor() {
+    this.invoiceService = new InvoiceService()
+  }
 
   /**
    * Start consuming real RabbitMQ events
@@ -81,9 +87,27 @@ export class InvoiceEventConsumer {
       console.log(`💰 Amount: ${event.data.amount} ${event.data.currency}`)
       console.log(`🔗 Routing Key: ${metadata.routingKey}`)
 
-      // For now, just log the event
-      // TODO: Implement invoice generation logic
-      console.log('📝 Invoice generation logic to be implemented')
+      // Create invoice from order data
+      console.log('📝 Creating invoice from order data...')
+
+      const invoiceData = {
+        orderId: event.data.orderId,
+        userId: event.data.userId,
+        amount: parseFloat(event.data.amount), // Convert string to number
+        currency: event.data.currency,
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        metadata: {
+          subscriptionPlan: event.data.subscriptionPlan,
+          status: event.data.status,
+          source: 'order_created_event',
+          eventId: event.eventId,
+        },
+      }
+
+      const invoice = await this.invoiceService.createInvoice(invoiceData)
+
+      console.log(`✅ Invoice created successfully: ${invoice.invoiceNumber}`)
+      console.log(`🆔 Invoice ID: ${invoice.id}`)
 
       const processingTime = Date.now() - startTime
       console.log(
@@ -94,6 +118,8 @@ export class InvoiceEventConsumer {
         eventId: event.eventId,
         eventType: event.eventType,
         orderId: event.data.orderId,
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
         processingTime,
         status: 'success',
       })
@@ -123,6 +149,8 @@ export class InvoiceEventConsumer {
     eventId: string
     eventType: string
     orderId: string
+    invoiceId?: string
+    invoiceNumber?: string
     processingTime: number
     status: 'success' | 'failed'
     error?: string
