@@ -2,13 +2,18 @@
 
 ## 🐛 Como Usar
 
-### Debug com tsx watch (Recomendado)
-- **🐛 Debug Order Service**: Debug o order-service com tsx watch (porta 3001)
-- **🧾 Debug Invoice Service**: Debug o invoice-service com tsx watch (porta 3002)
+### Debug Individual
+- **🚀 Debug Order Service**: Debug apenas o order-service (porta 3001)
+- **🧾 Debug Invoice Service**: Debug apenas o invoice-service (porta 3002)
 
-### Debug com pnpm dev
-- **🚀 Debug Order Service (npm dev)**: Debug usando o comando `pnpm run dev` (porta 3001)
-- **🧾 Debug Invoice Service (npm dev)**: Debug usando o comando `pnpm run dev` (porta 3002)
+### Debug de Testes
+- **🧪 Debug Order Service Tests**: Debug testes do order-service
+- **🧪 Debug Invoice Service Tests**: Debug testes do invoice-service
+
+### Debug Múltiplo
+- **🚀 Debug Both Services**: Debug ambos os serviços simultaneamente
+- **🧪 Debug All Tests**: Debug todos os testes simultaneamente
+- **🚀 Debug Services + Tests**: Debug serviços e testes ao mesmo tempo
 
 ## 🎯 Tasks Disponíveis
 
@@ -30,7 +35,9 @@
 2. **Variables**: Use o painel de variáveis para inspecionar valores
 3. **Call Stack**: Veja a pilha de chamadas durante o debug
 4. **Console**: Use `console.log()` ou o console integrado
-5. **Hot Reload**: As configurações com `tsx watch` recarregam automaticamente
+5. **Debug Simultâneo**: Use configurações compound para debug múltiplo
+6. **Debug de Testes**: Adicione breakpoints nos testes para inspecionar valores
+7. **Watch Mode**: Os testes rodam em modo watch para desenvolvimento
 
 ## 🎮 Atalhos
 
@@ -42,5 +49,8 @@
 
 - **tsx watch**: Executa com hot reload automático
 - **pnpm dev**: Executa o script dev do package.json
+- **pnpm test:watch**: Executa testes em modo watch
 - **Portas**: Order Service (3001), Invoice Service (3002)
 - **Source Maps**: Habilitados para debug de TypeScript
+- **Compound Debug**: Debug simultâneo de múltiplos serviços e testes
+- **Test Environment**: NODE_ENV=test para testes

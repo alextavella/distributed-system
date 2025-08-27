@@ -17,7 +17,7 @@
       "sourceMaps": true
     },
     {
-      "name": "🧾 Debug Invoice Service",
+      "name": "🚀 Debug Invoice Service",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "pnpm",
@@ -30,6 +30,74 @@
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"],
       "sourceMaps": true
+    },
+    {
+      "name": "🧪 Debug Order Service Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "test:watch"],
+      "cwd": "${workspaceFolder}/apps/order-service",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true
+    },
+    {
+      "name": "🧪 Debug Invoice Service Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run", "test:watch"],
+      "cwd": "${workspaceFolder}/apps/invoice-service",
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🚀 Debug Both Services",
+      "configurations": ["🚀 Debug Order Service", "🧾 Debug Invoice Service"],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "debug",
+        "order": 1
+      }
+    },
+    {
+      "name": "🧪 Debug All Tests",
+      "configurations": [
+        "🧪 Debug Order Service Tests",
+        "🧪 Debug Invoice Service Tests"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "debug",
+        "order": 2
+      }
+    },
+    {
+      "name": "🚀🧪 Debug Services + Tests",
+      "configurations": [
+        "🚀 Debug Order Service",
+        "🧾 Debug Invoice Service",
+        "🧪 Debug Order Service Tests",
+        "🧪 Debug Invoice Service Tests"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "debug",
+        "order": 3
+      }
     }
   ]
 }
