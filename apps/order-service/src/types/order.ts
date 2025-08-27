@@ -1,22 +1,33 @@
 import { z } from 'zod'
 
+/**
+ * Order Types and Schemas
+ *
+ * IMPORTANT: We use z.uuid() instead of z.string().uuid() because:
+ * - z.uuid() is more specific and validates the exact UUID format
+ * - z.string().uuid() allows any string that matches UUID pattern
+ * - z.uuid() provides better type inference and validation
+ * - This is the recommended approach for UUID fields in Zod
+ */
+
 // Base schemas
 export const OrderItemSchema = z.object({
   id: z.uuid().optional(),
+  orderId: z.uuid(),
   itemType: z.string().min(1),
   itemId: z.string().min(1),
   itemName: z.string().min(1),
-  quantity: z.string().min(1),
-  unitPrice: z.string().min(1),
-  totalPrice: z.string().min(1),
+  quantity: z.string().min(1), // decimal in DB, stored as string
+  unitPrice: z.string().min(1), // decimal in DB, stored as string
+  totalPrice: z.string().min(1), // decimal in DB, stored as string
   createdAt: z.date().optional(),
 })
 
 export const OrderSchema = z.object({
-  id: z.string().uuid(),
-  userId: z.string().uuid(),
+  id: z.uuid(),
+  userId: z.uuid(),
   subscriptionPlan: z.string().min(1),
-  amount: z.string().min(1),
+  amount: z.string().min(1), // decimal in DB, stored as string
   currency: z.string().length(3).default('USD'),
   status: z
     .enum(['pending', 'processing', 'completed', 'cancelled', 'refunded'])
@@ -24,8 +35,8 @@ export const OrderSchema = z.object({
   paymentMethod: z.string().nullable(),
   transactionId: z.string().nullable(),
   metadata: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
   items: z.array(OrderItemSchema).optional(),
 })
 
@@ -69,16 +80,16 @@ export const OrderResponseSchema = OrderSchema.omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 export const OrderWithItemsResponseSchema = OrderSchema.omit({
   createdAt: true,
   updatedAt: true,
 }).extend({
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 export const OrdersListResponseSchema = z.object({
