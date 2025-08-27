@@ -1,0 +1,50 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "🐛 Debug Order Service",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/order-service/src/index.ts",
+      "cwd": "${workspaceFolder}/apps/order-service",
+      "runtimeArgs": ["-r", "tsx/register"],
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "3001"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true
+    },
+    {
+      "name": "🧾 Debug Invoice Service",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/invoice-service/src/index.ts",
+      "cwd": "${workspaceFolder}/apps/invoice-service",
+      "runtimeArgs": ["-r", "tsx/register"],
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "3002"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true
+    },
+    {
+      "name": "🚀 Debug Both Services",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/apps/order-service/src/index.ts",
+      "cwd": "${workspaceFolder}/apps/order-service",
+      "runtimeArgs": ["-r", "tsx/register"],
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "3001"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMaps": true
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🚀 Start Order Service",
+      "type": "shell",
+      "command": "cd apps/order-service && pnpm run dev",
+      "group": "build",
+      "isBackground": true
+    },
+    {
+      "label": "🧾 Start Invoice Service",
+      "type": "shell",
+      "command": "cd apps/invoice-service && pnpm run dev",
+      "group": "build",
+      "isBackground": true
+    },
+    {
+      "label": "🐳 Start Dependencies",
+      "type": "shell",
+      "command": "./scripts/start-deps.sh",
+      "group": "build",
+      "isBackground": true
+    },
+    {
+      "label": "🧪 Test Order Service",
+      "type": "shell",
+      "command": "cd apps/order-service && pnpm run test",
+      "group": "test"
+    },
+    {
+      "label": "🧪 Test Invoice Service",
+      "type": "shell",
+      "command": "cd apps/invoice-service && pnpm run test",
+      "group": "test"
+    },
+    {
+      "label": "🔍 Type Check All",
+      "type": "shell",
+      "command": "pnpm run type-check",
+      "group": "build"
+    }
+  ]
+}
