@@ -1,6 +1,11 @@
 @baseUrl = http://localhost:3001
+@contentType = application/json
 
-### Health Check - Order Service
+### ========================================
+### HEALTH CHECKS & SERVICE STATUS
+### ========================================
+
+### Health Check - Basic
 GET {{baseUrl}}/health
 
 ### Health Check - Detailed (with dependencies)
@@ -9,9 +14,13 @@ GET {{baseUrl}}/health/detailed
 ### Readiness Check
 GET {{baseUrl}}/ready
 
-### Create Order - Test Case 1: Premium Subscription
+### ========================================
+### ORDER CREATION TESTS - VALID SCENARIOS
+### ========================================
+
+### Test Case 1: Premium Subscription (USD)
 POST {{baseUrl}}/api/orders
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "userId": "550e8400-e29b-41d4-a716-446655440001",
@@ -20,9 +29,9 @@ Content-Type: application/json
   "currency": "USD"
 }
 
-### Create Order - Test Case 2: Basic Subscription
+### Test Case 2: Basic Subscription (USD)
 POST {{baseUrl}}/api/orders
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "userId": "550e8400-e29b-41d4-a716-446655440002",
@@ -31,9 +40,9 @@ Content-Type: application/json
   "currency": "USD"
 }
 
-### Create Order - Test Case 3: Enterprise with EUR
+### Test Case 3: Enterprise with EUR
 POST {{baseUrl}}/api/orders
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
   "userId": "550e8400-e29b-41d4-a716-446655440003",
@@ -42,9 +51,73 @@ Content-Type: application/json
   "currency": "EUR"
 }
 
-### Create Order - Test Case 4: Invalid UUID (should fail)
+### Test Case 4: Large Amount Order
 POST {{baseUrl}}/api/orders
-Content-Type: application/json
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440005",
+  "subscriptionPlan": "enterprise",
+  "amount": "999.99",
+  "currency": "USD"
+}
+
+### Test Case 5: Order with Payment Method
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440006",
+  "subscriptionPlan": "premium",
+  "amount": "49.99",
+  "currency": "USD",
+  "paymentMethod": "credit_card"
+}
+
+### Test Case 6: Order with Metadata
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440007",
+  "subscriptionPlan": "basic",
+  "amount": "24.99",
+  "currency": "USD",
+  "metadata": {
+    "source": "web",
+    "campaign": "summer2024",
+    "referrer": "google"
+  }
+}
+
+### Test Case 7: Order with Items
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440008",
+  "subscriptionPlan": "premium",
+  "amount": "79.99",
+  "currency": "USD",
+  "items": [
+    {
+      "itemType": "subscription",
+      "itemId": "sub-premium-monthly",
+      "itemName": "Premium Monthly Subscription",
+      "quantity": "1",
+      "unitPrice": "79.99",
+      "totalPrice": "79.99"
+    }
+  ]
+}
+
+### ========================================
+### ORDER CREATION TESTS - INVALID SCENARIOS
+### ========================================
+
+### Test Case 8: Invalid UUID (should fail)
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
 
 {
   "userId": "invalid-uuid",
@@ -53,13 +126,152 @@ Content-Type: application/json
   "currency": "USD"
 }
 
-### Create Order - Test Case 5: Large Amount
+### Test Case 9: Missing Required Fields (should fail)
 POST {{baseUrl}}/api/orders
-Content-Type: application/json
+Content-Type: {{contentType}}
 
 {
-  "userId": "550e8400-e29b-41d4-a716-446655440005",
+  "userId": "550e8400-e29b-41d4-a716-446655440009"
+}
+
+### Test Case 10: Invalid Currency (should fail)
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440010",
   "subscriptionPlan": "premium",
-  "amount": "999.99",
+  "amount": "29.99",
+  "currency": "INVALID"
+}
+
+### Test Case 11: Negative Amount (should fail)
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440011",
+  "subscriptionPlan": "premium",
+  "amount": "-29.99",
   "currency": "USD"
+}
+
+### Test Case 12: Empty Subscription Plan (should fail)
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440012",
+  "subscriptionPlan": "",
+  "amount": "29.99",
+  "currency": "USD"
+}
+
+### Test Case 13: Zero Amount (should fail)
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440013",
+  "subscriptionPlan": "premium",
+  "amount": "0",
+  "currency": "USD"
+}
+
+### ========================================
+### ORDER RETRIEVAL TESTS
+### ========================================
+
+### Get Order by ID (use actual order ID from creation tests)
+GET {{baseUrl}}/api/orders/550e8400-e29b-41d4-a716-446655440001
+
+### Get All Orders (with pagination)
+GET {{baseUrl}}/api/orders?page=1&limit=5
+
+### Get Orders by User ID
+GET {{baseUrl}}/api/orders?userId=550e8400-e29b-41d4-a716-446655440001
+
+### Get Orders by Status
+GET {{baseUrl}}/api/orders?status=pending
+
+### Get Order Statistics
+GET {{baseUrl}}/api/orders/stats
+
+### ========================================
+### ORDER STATUS UPDATE TESTS
+### ========================================
+
+### Update Order Status to Processing
+PATCH {{baseUrl}}/api/orders/550e8400-e29b-41d4-a716-446655440001/status
+Content-Type: {{contentType}}
+
+{
+  "status": "processing"
+}
+
+### Update Order Status to Completed
+PATCH {{baseUrl}}/api/orders/550e8400-e29b-41d4-a716-446655440001/status
+Content-Type: {{contentType}}
+
+{
+  "status": "completed"
+}
+
+### ========================================
+### EDGE CASES & STRESS TESTS
+### ========================================
+
+### Test Case 14: Very Long Subscription Plan Name
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440014",
+  "subscriptionPlan": "super-premium-enterprise-business-corporate-plan-with-all-features",
+  "amount": "199.99",
+  "currency": "USD"
+}
+
+### Test Case 15: High Precision Amount
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440015",
+  "subscriptionPlan": "premium",
+  "amount": "29.999999",
+  "currency": "USD"
+}
+
+### Test Case 16: Different Currency (GBP)
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440016",
+  "subscriptionPlan": "basic",
+  "amount": "15.99",
+  "currency": "GBP"
+}
+
+### Test Case 17: Order with Complex Metadata
+POST {{baseUrl}}/api/orders
+Content-Type: {{contentType}}
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440017",
+  "subscriptionPlan": "enterprise",
+  "amount": "149.99",
+  "currency": "USD",
+  "metadata": {
+    "source": "mobile_app",
+    "platform": "ios",
+    "version": "2.1.0",
+    "device": "iPhone 15 Pro",
+    "campaign": "q4_2024_promotion",
+    "referrer": "app_store",
+    "utm_source": "facebook",
+    "utm_medium": "social",
+    "utm_campaign": "holiday_sale"
+  }
 }
