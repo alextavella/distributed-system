@@ -77,7 +77,7 @@ pnpm run dev
 ### Environment Variables
 ```bash
 # Database
-DATABASE_URL=postgresql://postgres:password@localhost:5433/invoices_db
+DATABASE_URL=postgresql://postgres:password@localhost:5432/invoices_db
 
 # Message Broker
 RABBITMQ_URL=amqp://admin:admin@localhost:5672
@@ -160,7 +160,7 @@ docker compose logs invoice-service -f
 
 ### Service Configuration
 - **Port**: 3002
-- **Database**: postgres-invoices (port 5433)
+- **Database**: postgres (port 5432, database: invoices_db)
 - **Dependencies**: RabbitMQ, PostgreSQL
 - **Health Checks**: HTTP endpoint monitoring
 

@@ -215,8 +215,19 @@ pnpm new-service payment-service
 
 ### Infraestrutura
 - **RabbitMQ Management**: http://localhost:15672 (admin/admin)
-- **PostgreSQL Orders**: localhost:5432
-- **PostgreSQL Invoices**: localhost:5433
+- **PostgreSQL**: localhost:5432
+  - Database: `orders_db` (Order Service)
+  - Database: `invoices_db` (Invoice Service)
+
+## 🗃️ Configuração do Banco de Dados
+
+Nossa arquitetura usa **uma única instância do PostgreSQL** com **múltiplos databases** para diferentes serviços:
+
+- **PostgreSQL**: localhost:5432
+  - Database: `orders_db` (Order Service)
+  - Database: `invoices_db` (Invoice Service)
+
+Para mais detalhes sobre configuração, migrações e troubleshooting, veja [Database Configuration](../docs/architecture/DATABASE_CONFIGURATION.md).
 
 ## 📚 Estrutura de um Serviço
 

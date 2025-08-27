@@ -65,7 +65,7 @@ microservices/
 │   │
 │   └── invoice-service/                   # 🧾 Invoice processing service (Event Consumer)
 │       ├── src/
-│       │   ├── db/                       # 🗃️ Database layer (separate PostgreSQL)
+│       │   ├── db/                       # 🗃️ Database layer (shared PostgreSQL instance)
 │       │   │   ├── connection.ts
 │       │   │   ├── migrate.ts
 │       │   │   └── schema.ts

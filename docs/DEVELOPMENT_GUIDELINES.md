@@ -962,3 +962,91 @@ GET {{baseUrl}}/ready
 - [Zod Validation](https://zod.dev/)
 - [Message Broker Architecture](./architecture/MESSAGE_BROKER_ARCHITECTURE.md)
 - [Database Migrations](./architecture/DATABASE_MIGRATIONS.md)
+
+## 📋 Code Standards
+
+### Type Validation with Zod
+
+#### UUID Fields
+**✅ CORRETO: Use `z.uuid()`**
+```typescript
+export const UserSchema = z.object({
+  id: z.uuid(),           // ✅ Correct
+  userId: z.uuid(),       // ✅ Correct
+  referenceId: z.uuid(),  // ✅ Correct
+})
+```
+
+**❌ INCORRETO: Don't use `z.string().uuid()`**
+```typescript
+export const UserSchema = z.object({
+  id: z.string().uuid(),           // ❌ Incorrect
+  userId: z.string().uuid(),       // ❌ Incorrect
+  referenceId: z.string().uuid(),  // ❌ Incorrect
+})
+```
+
+**Por que usar `z.uuid()`?**
+
+1. **Validação mais específica**: `z.uuid()` valida exatamente o formato UUID v4
+2. **Melhor inferência de tipos**: TypeScript infere o tipo correto `string`
+3. **Performance**: Validação mais eficiente
+4. **Padrão da comunidade**: É a abordagem recomendada para campos UUID
+5. **Consistência**: Mantém consistência com outros validadores de UUID
+
+#### Exemplo de Implementação
+
+```typescript
+import { z } from 'zod'
+
+/**
+ * User Schema Example
+ * 
+ * IMPORTANT: We use z.uuid() instead of z.string().uuid() because:
+ * - z.uuid() is more specific and validates the exact UUID format
+ * - z.string().uuid() allows any string that matches UUID pattern
+ * - z.uuid() provides better type inference and validation
+ * - This is the recommended approach for UUID fields in Zod
+ */
+export const UserSchema = z.object({
+  id: z.uuid(),
+  email: z.string().email(),
+  name: z.string().min(1),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+// Type inference works correctly
+export type User = z.infer<typeof UserSchema>
+// User.id is correctly typed as string (UUID)
+```
+
+### Database Schema Consistency
+
+When using Drizzle ORM with Zod schemas:
+
+1. **Database fields**: Use `uuid()` for UUID columns
+2. **Zod validation**: Use `z.uuid()` for validation
+3. **Type conversion**: Convert between Drizzle types and Zod types as needed
+
+```typescript
+// Database schema (Drizzle)
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+})
+
+// Zod validation schema
+export const UserSchema = z.object({
+  id: z.uuid(),
+  email: z.string().email(),
+})
+
+// Service layer conversion
+private convertDrizzleUserToZodUser(drizzleUser: DrizzleUser): User {
+  return {
+    id: drizzleUser.id, // Already string, no conversion needed
+    email: drizzleUser.email,
+  }
+}
+```
