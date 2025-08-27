@@ -2,12 +2,13 @@
 
 ## 🐛 Como Usar
 
-### Debug Individual
-- **🐛 Debug Order Service**: Debug apenas o order-service na porta 3001
-- **🧾 Debug Invoice Service**: Debug apenas o invoice-service na porta 3002
+### Debug com tsx watch (Recomendado)
+- **🐛 Debug Order Service**: Debug o order-service com tsx watch (porta 3001)
+- **🧾 Debug Invoice Service**: Debug o invoice-service com tsx watch (porta 3002)
 
-### Debug Múltiplo
-- **🚀 Debug Both Services**: Debug ambos os serviços simultaneamente
+### Debug com pnpm dev
+- **🚀 Debug Order Service (npm dev)**: Debug usando o comando `pnpm run dev` (porta 3001)
+- **🧾 Debug Invoice Service (npm dev)**: Debug usando o comando `pnpm run dev` (porta 3002)
 
 ## 🎯 Tasks Disponíveis
 
@@ -29,9 +30,17 @@
 2. **Variables**: Use o painel de variáveis para inspecionar valores
 3. **Call Stack**: Veja a pilha de chamadas durante o debug
 4. **Console**: Use `console.log()` ou o console integrado
+5. **Hot Reload**: As configurações com `tsx watch` recarregam automaticamente
 
 ## 🎮 Atalhos
 
 - `F5`: Iniciar debug
 - `Ctrl+Shift+D`: Abrir painel de debug
 - `Ctrl+Shift+P`: Executar tasks
+
+## 🔧 Configurações
+
+- **tsx watch**: Executa com hot reload automático
+- **pnpm dev**: Executa o script dev do package.json
+- **Portas**: Order Service (3001), Invoice Service (3002)
+- **Source Maps**: Habilitados para debug de TypeScript
