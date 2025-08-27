@@ -57,16 +57,28 @@ New to the message broker architecture? Start here:
 - **🛡️ Reliable** - Persistent messages and error handling
 - **📊 Observable** - Comprehensive logging and monitoring
 - **🧪 Testable** - Mock implementations for unit testing
+- **🔒 Type-Safe** - Full TypeScript support with strict typing
+- **🔄 Decimal Handling** - Automatic conversion between number/string types
+- **🐛 Debug Ready** - VS Code debugger configurations included
 
 ## 🔧 Core Components
 
 > **📋 Note**: For detailed component descriptions and responsibilities, see [Architecture Overview](./MESSAGE_BROKER_ARCHITECTURE.md#key-components-responsibilities).
 
+### 🆕 **New Components Implemented:**
+- **Repository Pattern** - Clean data access layer with interfaces
+- **Message Broker Interface** - Type-safe contracts for event communication
+- **Factory Pattern** - Dependency injection for better testability
+- **Error Handling** - Standardized HTTP error classes
+- **Type Conversion** - Automatic decimal type handling for Drizzle ORM
+
 ## 📋 Prerequisites
 
 - **Node.js** 18+ with TypeScript
 - **RabbitMQ** server (via Docker or standalone)
+- **PostgreSQL** with Drizzle ORM
 - **Basic understanding** of microservices and event-driven architecture
+- **VS Code** with recommended extensions for optimal development experience
 
 ## 🎯 Use Cases
 
@@ -77,6 +89,8 @@ This architecture is perfect for:
 - ✅ **Async Processing** - Decouple heavy operations from user requests
 - ✅ **Integration Events** - Sync data between bounded contexts
 - ✅ **Audit Logging** - Track all business events for compliance
+- ✅ **Type-Safe Development** - Full TypeScript support with strict validation
+- ✅ **Database Integration** - Seamless ORM integration with automatic type conversion
 
 ## 📈 Benefits
 
@@ -85,70 +99,48 @@ This architecture is perfect for:
 - **Consistent Patterns** - Same approach across all services
 - **Better Testing** - Mock implementations included
 - **Clear Documentation** - Everything you need to know
+- **Type Safety** - Compile-time error detection
+- **Debug Support** - VS Code debugger ready to use
+- **Hot Reload** - Development with automatic reload
 
 ### For Architecture
 - **Loose Coupling** - Services don't depend on each other directly
 - **Scalability** - Easy to scale services independently
 - **Resilience** - System works even if some services are down
 - **Extensibility** - Add new event types without breaking changes
+- **Data Consistency** - Automatic type conversion for database operations
+- **Repository Pattern** - Clean separation of concerns
 
 ### For Operations
 - **Monitoring** - Built-in logging and observability
 - **Debugging** - Clear event trails for troubleshooting
 - **Performance** - Efficient connection and resource management
 - **Reliability** - Persistent messages survive restarts
+- **Type Validation** - Runtime type checking with Zod schemas
+- **Error Handling** - Standardized error responses
 
-## 🗺️ Migration Path
+## 🆕 Recent Improvements
 
-Already have a message broker implementation? Here's how to migrate:
+### ✅ **Type Safety & Drizzle ORM**
+- **Decimal Type Handling**: Automatic conversion between `number` (application) ↔ `string` (Drizzle ORM)
+- **Repository Interfaces**: Standardized contracts for data access operations
+- **Zod Validation**: Runtime type validation with TypeScript inference
 
-1. **Phase 1**: Copy the new architecture alongside your existing code
-2. **Phase 2**: Update new features to use the new architecture
-3. **Phase 3**: Gradually migrate existing features
-4. **Phase 4**: Remove old implementation
+### ✅ **Development Experience**
+- **VS Code Debugger**: Complete debugging configurations for individual and compound debugging
+- **Hot Reload**: tsx for development with automatic reload
+- **Test Framework**: Vitest configured for unit and integration testing
+- **Monorepo**: pnpm workspace with shared dependencies
 
-See the [Migration Guide](./MESSAGE_BROKER_ARCHITECTURE.md#migration-guide) for detailed steps.
+### ✅ **Code Quality**
+- **ESLint + Prettier**: Automated code formatting and linting
+- **TypeScript Strict**: Rigorous type checking configuration
+- **Error Classes**: Consistent error handling patterns
+- **Repository Pattern**: Clear separation between business logic and data access
 
-## 🤝 Contributing
+## 🔗 Related Documentation
 
-Found an issue or want to improve the architecture?
-
-1. **Report Issues** - Use GitHub issues for bugs or feature requests
-2. **Suggest Improvements** - Architecture discussions welcome
-3. **Share Examples** - Help others with real-world usage examples
-4. **Update Docs** - Keep documentation current and helpful
-
-## 📞 Support
-
-Need help? Here are your options:
-
-- **📖 Documentation** - Start with the appropriate documentation type above
-- **🔍 Search Issues** - Check if your question was already answered
-- **💬 Ask Questions** - Create a GitHub issue with the `question` label
-- **🚨 Report Bugs** - Create a GitHub issue with the `bug` label
-
-## 🏷️ Version Information
-
-- **Current Version**: 1.0.0
-- **Node.js Compatibility**: 18+
-- **TypeScript**: 5.0+
-- **RabbitMQ**: 3.8+
-
-## 📄 License
-
-This architecture is part of the microservices project and follows the same licensing terms.
-
----
-
-## 🎉 Ready to Get Started?
-
-Choose your path based on what you need:
-
-| I want to... | Go to... |
-|--------------|----------|
-| **Learn the basics** | [Getting Started Tutorial](./GETTING_STARTED_TUTORIAL.md) |
-| **Solve a specific problem** | [Quick Reference](./QUICK_REFERENCE.md) |
-| **Understand the architecture** | [Architecture Overview](./MESSAGE_BROKER_ARCHITECTURE.md) |
-| **Look up API details** | [API Reference](./MESSAGE_BROKER_ARCHITECTURE.md#api-reference) |
-
-Happy coding! 🚀
+- [**Development Guidelines**](../DEVELOPMENT_GUIDELINES.md) - Complete development patterns
+- [**Testing Guide**](../TESTING.md) - Comprehensive testing strategies
+- [**VS Code Debugging**](../.vscode/README.md) - Debugger configuration guide
+- [**Database Migrations**](./DATABASE_MIGRATIONS.md) - Database management best practices

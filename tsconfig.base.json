@@ -25,15 +25,7 @@
     "emitDecoratorMetadata": true,
     "baseUrl": ".",
     "paths": {
-      "@streamflix/shared-broker": ["./apps/shared-broker/src"],
-      "@order-service": ["./apps/order-service/src"],
-      "@invoice-service": ["./apps/invoice-service/src"],
-      "@order-types": ["./apps/order-service/src/types"],
-      "@order-db": ["./apps/order-service/src/db"],
-      "@order-services": ["./apps/order-service/src/services"],
-      "@invoice-types": ["./apps/invoice-service/src/types"],
-      "@invoice-db": ["./apps/invoice-service/src/db"],
-      "@invoice-services": ["./apps/invoice-service/src/services"]
+      "@streamflix/shared-broker": ["./apps/shared-broker/src"]
     }
   },
   "exclude": ["node_modules", "dist", "build", "coverage"]

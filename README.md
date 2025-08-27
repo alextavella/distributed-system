@@ -13,7 +13,7 @@ streamflix-microservices/
 ├── docs/                           # Documentação
 │   ├── architecture/               # Documentação de arquitetura
 │   └── feature/                    # Documentação de features
-├── test/                           # Testes HTTP
+├── tests/                          # Testes HTTP
 │   └── http/                       # Arquivos de teste REST
 ├── scripts/                        # Scripts de desenvolvimento
 ├── docker-compose.yml              # Infraestrutura Docker
@@ -30,6 +30,8 @@ streamflix-microservices/
 - **Docker** - Containerização
 - **TypeScript** - Tipagem estática
 - **ESLint + Prettier** - Linting e formatação
+- **Vitest** - Framework de testes
+- **tsx** - Execução TypeScript em desenvolvimento
 
 ## 📋 Serviços e Pacotes
 
@@ -173,10 +175,11 @@ pnpm db:studio:invoice
 - `pnpm type-check` - Verificar tipos TypeScript
 
 ### Testes
-- `pnpm test:integration` - Executar testes de integração
-- `pnpm test:integration:watch` - Testes em modo watch
-- `pnpm test:integration:ui` - Interface visual dos testes
-- `./scripts/test-integration.sh` - Script de conveniência para testes
+- `pnpm test` - Executar todos os testes
+- `pnpm test:watch` - Testes em modo watch
+- `pnpm test:ui` - Interface visual dos testes
+- `pnpm --filter order-service test` - Testes do order-service
+- `pnpm --filter invoice-service test` - Testes do invoice-service
 
 ### Docker
 - `pnpm docker:build` - Build das imagens
@@ -292,7 +295,7 @@ O projeto inclui uma suíte completa de testes HTTP usando arquivos `.http`:
 
 ```bash
 # Estrutura dos testes
-test/
+tests/
 ├── README.md           # Guia completo de testes
 └── http/
     ├── order.http      # Testes do Order Service
@@ -301,7 +304,7 @@ test/
 
 **Como usar:**
 1. Instalar extensão "REST Client" no VS Code
-2. Abrir arquivos `.http` em `test/http/`
+2. Abrir arquivos `.http` em `tests/http/`
 3. Clicar em "Send Request" acima de cada bloco HTTP
 4. Ver respostas no painel dividido
 
@@ -325,15 +328,47 @@ pnpm --filter order-service test
 pnpm --filter invoice-service test
 ```
 
+## 🐛 Debugging
+
+### VS Code Debugger
+
+O projeto inclui configurações completas de debug para VS Code:
+
+#### **Debug Individual:**
+- **🚀 Debug Order Service**: Debug apenas o order-service (porta 3001)
+- **🚀 Debug Invoice Service**: Debug apenas o invoice-service (porta 3002)
+- **🧪 Debug Order Service Tests**: Debug testes do order-service
+- **🧪 Debug Invoice Service Tests**: Debug testes do invoice-service
+
+#### **Debug Múltiplo:**
+- **🚀 Debug Both Services**: Debug ambos os serviços simultaneamente
+- **🧪 Debug All Tests**: Debug todos os testes simultaneamente
+- **🚀🧪 Debug Services + Tests**: Debug serviços e testes ao mesmo tempo
+
+### Como Usar:
+1. **Breakpoints**: Clique na linha para adicionar breakpoints
+2. **Variables**: Use o painel de variáveis para inspecionar valores
+3. **Call Stack**: Veja a pilha de chamadas durante o debug
+4. **Console**: Use `console.log()` ou o console integrado
+5. **Debug Simultâneo**: Use configurações compound para debug múltiplo
+
+### Atalhos:
+- `F5`: Iniciar debug
+- **Ctrl+Shift+D**: Abrir painel de debug
+- **Selecionar**: Qualquer configuração individual ou compound
+
 ## 📦 Dependências Compartilhadas
 
 As dependências comuns estão no `package.json` raiz:
 - TypeScript
 - ESLint
 - Prettier
+- @types/node
 - Scripts de desenvolvimento
 
-Cada serviço tem suas dependências específicas no próprio `package.json`.
+Cada serviço tem suas dependências específicas no próprio `package.json`:
+- tsx (para desenvolvimento)
+- Vitest (para testes)
 
 ## 🔧 Configuração de IDE
 
@@ -344,6 +379,7 @@ Recomendado instalar as extensões:
 - Prettier
 - TypeScript Importer
 - Drizzle ORM
+- REST Client
 
 ### Configurações
 
@@ -351,6 +387,8 @@ O projeto já inclui:
 - `.eslintrc.js` - Regras de linting
 - `.prettierrc` - Formatação de código
 - `tsconfig.base.json` - Config TypeScript base
+- `.vscode/launch.json` - Configurações de debug
+- `.vscode/tasks.json` - Tasks do VS Code
 
 ## 🚀 Deploy
 
@@ -368,7 +406,7 @@ docker-compose build
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## 🧪 Testes
+## 🧪 Testes de Integração
 
 O projeto inclui uma suíte completa de testes de integração que valida o funcionamento dos serviços em cenários reais.
 

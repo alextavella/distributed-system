@@ -13,8 +13,33 @@ microservices/
 │   ├── invoice-service/        # Serviço de faturas  
 │   └── shared-broker/          # Message broker compartilhado
 ├── docs/                       # Documentação
-└── test/                      # Testes HTTP
+├── tests/                      # Testes HTTP
+└── .vscode/                    # Configurações de debug VS Code
 ```
+
+## 🆕 Melhorias Implementadas
+
+### ✅ **Type Safety & Drizzle ORM**
+- **Decimal Type Handling**: Conversão automática entre `number` (app) ↔ `string` (Drizzle)
+- **Repository Pattern**: Interfaces padronizadas para operações de banco
+- **Zod Validation**: Schemas de validação com inferência de tipos
+
+### ✅ **Message Broker Architecture**
+- **Event-Driven**: Comunicação assíncrona entre serviços via RabbitMQ
+- **Shared Broker**: Pacote compartilhado para produtores e consumidores
+- **Type-Safe Events**: Interfaces TypeScript para todos os eventos
+
+### ✅ **Development Experience**
+- **VS Code Debugger**: Configurações completas para debug individual e múltiplo
+- **Hot Reload**: tsx para desenvolvimento com reload automático
+- **Test Framework**: Vitest configurado para testes unitários e de integração
+- **Monorepo**: pnpm workspace com dependências compartilhadas
+
+### ✅ **Code Quality**
+- **ESLint + Prettier**: Linting e formatação automática
+- **TypeScript Strict**: Configuração rigorosa de tipos
+- **Error Handling**: Padrões consistentes de tratamento de erros
+- **Repository Pattern**: Separação clara entre lógica de negócio e dados
 
 ## 📝 Estrutura de um Serviço
 
@@ -31,14 +56,22 @@ apps/my-service/
 │   │   └── migrate.ts         # Script de migração
 │   ├── services/              # Business logic
 │   │   └── my-entity.service.ts
+│   ├── repositories/          # Data access layer
+│   │   └── drizzle-entity.repository.ts
 │   ├── routes/                # API endpoints
 │   │   ├── my-entity.ts       # Rotas da entidade
 │   │   └── health.ts          # Health checks
 │   └── index.ts               # Entry point
 ├── drizzle/                   # Migrations (versionadas!)
-├── package.json
+├── package.json               # Dependências específicas (tsx, vitest)
 └── tsconfig.json
 ```
+
+### 🆕 **Novos Padrões Implementados:**
+- **Repository Interface**: Contrato para operações de banco
+- **Message Broker Interface**: Contrato para comunicação entre serviços
+- **Factory Pattern**: Injeção de dependências padronizada
+- **Error Classes**: Hierarquia de erros HTTP padronizada
 
 ---
 
