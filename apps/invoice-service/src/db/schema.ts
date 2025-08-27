@@ -29,10 +29,10 @@ export const invoices = pgTable(
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     generatedAt: timestamp('generated_at'),
   },
-  table => ({
-    orderIdIdx: index('idx_invoices_order_id').on(table.orderId),
-    statusIdx: index('idx_invoices_status').on(table.status),
-  }),
+  table => [
+    index('idx_invoices_order_id').on(table.orderId),
+    index('idx_invoices_status').on(table.status),
+  ],
 )
 
 // Simplified invoice items (optional, for future use)
@@ -48,9 +48,7 @@ export const invoiceItems = pgTable(
     unitPrice: decimal('unit_price', { precision: 10, scale: 2 }).notNull(),
     totalPrice: decimal('total_price', { precision: 10, scale: 2 }).notNull(),
   },
-  table => ({
-    invoiceIdIdx: index('idx_invoice_items_invoice_id').on(table.invoiceId),
-  }),
+  table => [index('idx_invoice_items_invoice_id').on(table.invoiceId)],
 )
 
 // Relations

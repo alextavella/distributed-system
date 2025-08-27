@@ -34,9 +34,6 @@ interface CreateInvoiceData {
 
 export class InvoiceService {
   async createInvoice(invoiceData: CreateInvoiceData): Promise<Invoice> {
-    // Ensure amount is always a string
-    const amountString = invoiceData.amount.toString()
-
     // Create invoice
     const [invoice] = await db
       .insert(invoices)
@@ -45,7 +42,7 @@ export class InvoiceService {
         orderId: invoiceData.orderId,
         invoiceNumber: `INV-${Date.now()}`,
         status: 'pending',
-        amount: amountString,
+        amount: invoiceData.amount.toString(),
         currency: invoiceData.currency,
         orderData: invoiceData.metadata
           ? JSON.stringify(invoiceData.metadata)
@@ -84,7 +81,7 @@ export class InvoiceService {
       orderId: invoice.orderId,
       userId: invoiceData.userId,
       subscriptionPlan: 'invoice',
-      amount: amountString,
+      amount: invoiceData.amount,
       currency: invoiceData.currency,
       status: invoice.status,
     })

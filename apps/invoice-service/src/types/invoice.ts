@@ -1,3 +1,15 @@
+/**
+ * Invoice Service Types
+ *
+ * IMPORTANT: We use z.number() for monetary values and quantities because:
+ * - Monetary values should be numbers for proper mathematical operations
+ * - Quantities should be integers for counting operations
+ * - This provides better type safety and validation
+ * - Database stores these as decimal/numeric types but we handle them as numbers in the application
+ * - When inserting into database, we convert numbers to strings for Drizzle's decimal type
+ * - When fetching from database, we convert strings back to numbers for application logic
+ */
+
 import { z } from 'zod'
 
 /**
@@ -8,6 +20,12 @@ import { z } from 'zod'
  * - z.string().uuid() allows any string that matches UUID pattern
  * - z.uuid() provides better type inference and validation
  * - This is the recommended approach for UUID fields in Zod
+ *
+ * IMPORTANT: We use z.number() for monetary values and quantities because:
+ * - Monetary values should be numbers for proper mathematical operations
+ * - Quantities should be integers for counting operations
+ * - This provides better type safety and validation
+ * - Database stores these as decimal/numeric types but we handle them as numbers in the application
  */
 
 // Base schemas
@@ -15,9 +33,9 @@ export const InvoiceItemSchema = z.object({
   id: z.uuid().optional(),
   invoiceId: z.uuid(),
   itemName: z.string().min(1),
-  quantity: z.number().int().positive(),
-  unitPrice: z.number().positive(),
-  totalPrice: z.number().positive(),
+  quantity: z.number().int().positive(), // decimal in DB, stored as number for calculations
+  unitPrice: z.number().positive(), // decimal in DB, stored as number for calculations
+  totalPrice: z.number().positive(), // decimal in DB, stored as number for calculations
 })
 
 export const InvoiceSchema = z.object({
@@ -25,7 +43,7 @@ export const InvoiceSchema = z.object({
   orderId: z.uuid(),
   invoiceNumber: z.string().min(1),
   status: z.enum(['pending', 'generated']).default('pending'),
-  amount: z.number().positive(),
+  amount: z.number().positive(), // decimal in DB, stored as number for calculations
   currency: z.string().length(3).default('USD'),
   orderData: z.record(z.string(), z.any()).nullable(),
   createdAt: z.string(),
@@ -98,12 +116,17 @@ export const ErrorResponseSchema = z.object({
 // TypeScript types
 export type Invoice = z.infer<typeof InvoiceSchema>
 export type InvoiceItem = z.infer<typeof InvoiceItemSchema>
+export type CreateInvoiceData = Omit<
+  Invoice,
+  'id' | 'createdAt' | 'updatedAt' | 'generatedAt'
+>
+export type CreateInvoiceItemData = Omit<InvoiceItem, 'id'>
 export type InvoiceResponse = z.infer<typeof InvoiceResponseSchema>
 export type InvoiceWithItemsResponse = z.infer<
   typeof InvoiceWithItemsResponseSchema
 >
 export type InvoicesListResponse = z.infer<typeof InvoicesListResponseSchema>
-export type UpdateStatusResponse = z.infer<typeof UpdateStatusResponseSchema>
+export type UpdateStatusResponse = z.infer<typeof UpdateStatusBodySchema>
 export type InvoicesQuery = z.infer<typeof InvoicesQuerySchema>
 export type UpdateStatusData = z.infer<typeof UpdateStatusBodySchema>
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>
