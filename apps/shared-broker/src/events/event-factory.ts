@@ -16,7 +16,7 @@ export class EventFactory implements IEventFactory {
     orderId: string
     userId: string
     subscriptionPlan: string
-    amount: string
+    amount: number
     currency: string
     status: string
   }): OrderCreatedEvent {

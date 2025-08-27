@@ -19,7 +19,7 @@ export interface OrderCreatedEvent extends BaseEvent {
     orderId: string
     userId: string
     subscriptionPlan: string
-    amount: string
+    amount: number
     currency: string
     status: string
   }
@@ -34,7 +34,7 @@ export interface IEventFactory {
     orderId: string
     userId: string
     subscriptionPlan: string
-    amount: string
+    amount: number
     currency: string
     status: string
   }): OrderCreatedEvent

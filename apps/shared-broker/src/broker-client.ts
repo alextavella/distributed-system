@@ -81,7 +81,7 @@ export class BrokerClient {
     orderId: string
     userId: string
     subscriptionPlan: string
-    amount: string
+    amount: number
     currency: string
     status: string
   }): Promise<void> {
