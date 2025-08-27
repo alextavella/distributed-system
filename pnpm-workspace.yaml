@@ -5,3 +5,5 @@ packages:
   - 'packages/*'
   # Tooling and configuration packages
   - 'tools/*'
+  # Tests
+  - 'tests'
