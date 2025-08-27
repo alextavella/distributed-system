@@ -4,7 +4,7 @@ import * as schema from './schema.js'
 
 const connectionString =
   process.env.DATABASE_URL ||
-  'postgresql://postgres:password@localhost:5433/invoices_db'
+  'postgresql://postgres:password@localhost:5432/invoices_db'
 
 // Create the connection
 const client = postgres(connectionString, { max: 1 })

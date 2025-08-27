@@ -4,7 +4,7 @@ import postgres from 'postgres'
 
 const connectionString =
   process.env.DATABASE_URL ||
-  'postgresql://postgres:password@localhost:5433/invoices_db'
+  'postgresql://postgres:password@localhost:5432/invoices_db'
 
 async function main() {
   console.log('🔄 Running migrations for invoice-service...')
