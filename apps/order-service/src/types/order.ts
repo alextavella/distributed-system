@@ -8,6 +8,12 @@ import { z } from 'zod'
  * - z.string().uuid() allows any string that matches UUID pattern
  * - z.uuid() provides better type inference and validation
  * - This is the recommended approach for UUID fields in Zod
+ *
+ * IMPORTANT: We use z.number() for monetary values and quantities because:
+ * - Monetary values should be numbers for proper mathematical operations
+ * - Quantities should be integers for counting operations
+ * - This provides better type safety and validation
+ * - Database stores these as decimal/numeric types but we handle them as numbers in the application
  */
 
 // Base schemas
@@ -17,9 +23,9 @@ export const OrderItemSchema = z.object({
   itemType: z.string().min(1),
   itemId: z.string().min(1),
   itemName: z.string().min(1),
-  quantity: z.string().min(1), // decimal in DB, stored as string
-  unitPrice: z.string().min(1), // decimal in DB, stored as string
-  totalPrice: z.string().min(1), // decimal in DB, stored as string
+  quantity: z.number().int().positive(), // decimal in DB, stored as number for calculations
+  unitPrice: z.number().positive(), // decimal in DB, stored as number for calculations
+  totalPrice: z.number().positive(), // decimal in DB, stored as number for calculations
   createdAt: z.date().optional(),
 })
 
@@ -27,7 +33,7 @@ export const OrderSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
   subscriptionPlan: z.string().min(1),
-  amount: z.string().min(1), // decimal in DB, stored as string
+  amount: z.number().positive(), // decimal in DB, stored as number for calculations
   currency: z.string().length(3).default('USD'),
   status: z
     .enum(['pending', 'processing', 'completed', 'cancelled', 'refunded'])
@@ -44,7 +50,7 @@ export const OrderSchema = z.object({
 export const CreateOrderBodySchema = z.object({
   userId: z.uuid(),
   subscriptionPlan: z.string().min(1),
-  amount: z.string().min(1),
+  amount: z.number().positive(), // decimal in DB, stored as number for calculations
   currency: z.string().length(3).default('USD'),
   paymentMethod: z.string().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).nullable().optional(),
